@@ -35,12 +35,14 @@ class AccountViewModel @Inject constructor(
     val uiState: StateFlow<AccountState> = _uiState.asStateFlow()
 
     private var observacion: Job? = null
+    private var avance: Job? = null
 
     fun cargar() {
         viewModelScope.launch(ioDispatcher) {
             val cuenta = cuentaRepository.getCuenta()
             _uiState.update { it.copy(cuenta = cuenta.getOrNull() ?: it.cuenta) }
         }
+        observarAvance()
         if (observacion?.isActive == true && _uiState.value.errorCargaRes == null) return
         observacion?.cancel()
         _uiState.update { it.copy(isLoading = it.nombre.isBlank(), errorCargaRes = null, correo = authRepository.correo) }
@@ -54,6 +56,7 @@ class AccountViewModel @Inject constructor(
                             nombre = perfil.nombre,
                             fotoUrl = perfil.fotoUrl,
                             cantidadPrendas = perfil.cantidadPrendas,
+                            estilo = perfil.resultadoActual?.nombreCompleto,
                         )
                     }
                 } else {
@@ -62,6 +65,16 @@ class AccountViewModel @Inject constructor(
                         it.copy(isLoading = false, errorCargaRes = mensajeDeError(result.exceptionOrNull(), R.string.error_cargar_cuenta))
                     }
                 }
+            }
+        }
+    }
+
+    // El avance es un dato mas del resumen: si falla, la cuenta se ve igual
+    private fun observarAvance() {
+        if (avance?.isActive == true) return
+        avance = viewModelScope.launch(ioDispatcher) {
+            usuarioRepository.observarLeccionesCompletadas().collect { result ->
+                result.getOrNull()?.let { completadas -> _uiState.update { it.copy(leccionesCompletadas = completadas) } }
             }
         }
     }
@@ -89,6 +102,7 @@ class AccountViewModel @Inject constructor(
 
     fun cerrarSesion() {
         observacion?.cancel()
+        avance?.cancel()
         authRepository.signOut()
         _uiState.update { it.copy(salir = true) }
     }
@@ -106,6 +120,7 @@ class AccountViewModel @Inject constructor(
     fun borrarCuenta() {
         if (_uiState.value.borrando) return
         observacion?.cancel()
+        avance?.cancel()
         _uiState.update { it.copy(confirmarBorrado = false, borrando = true, errorMessageRes = null) }
         viewModelScope.launch(ioDispatcher) {
             val result = cuentaRepository.eliminarCuenta()
