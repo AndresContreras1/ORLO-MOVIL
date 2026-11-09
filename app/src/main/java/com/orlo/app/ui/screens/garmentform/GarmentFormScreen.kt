@@ -25,6 +25,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -119,15 +121,21 @@ fun GarmentFormScreen(
                     modifier = Modifier.fillMaxWidth().aspectRatio(1F).clip(MaterialTheme.shapes.medium),
                 )
             } else {
+                val fondo = colorDeHex(colorDePrenda(state.prenda.color)?.hex ?: "#F1ECE7")
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(2F)
                         .clip(MaterialTheme.shapes.medium)
-                        .background(colorDeHex(colorDePrenda(state.prenda.color)?.hex ?: "#F1ECE7")),
+                        .background(fondo),
                 ) {
-                    Text(text = stringResource(R.string.sin_foto), style = MaterialTheme.typography.bodyMedium)
+                    // El texto se lee sobre colores claros y oscuros
+                    Text(
+                        text = stringResource(R.string.sin_foto),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (fondo.luminance() > 0.5F) Color.Black else Color.White,
+                    )
                 }
             }
             PickImageButton(

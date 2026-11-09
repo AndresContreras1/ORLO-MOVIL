@@ -1,8 +1,10 @@
 package com.orlo.app.ui.navigation
 
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,7 +26,8 @@ fun BottomNav(
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
 
-    NavigationBar(modifier = modifier) {
+    // Los colores salen del tema de ORLO: superficie neutra y el acento suave en la pestana actual
+    NavigationBar(modifier = modifier, containerColor = MaterialTheme.colorScheme.surface) {
         bottomNavItems.forEach { item ->
             val isSelected = currentRoute == item.route
 
@@ -44,6 +47,13 @@ fun BottomNav(
                     )
                 },
                 selected = isSelected,
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
                 // Al cambiar de pestana no se apilan pantallas: Inicio queda siempre en la base
                 onClick = {
                     if (!isSelected) {

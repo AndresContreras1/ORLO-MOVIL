@@ -24,7 +24,7 @@
     <string name="nav_aprende">Aprende</string>
     <string name="nav_asesor">Asesor IA</string>
     <string name="nav_explora">Explora</string>
-    <string name="nav_armario">Mi armario</string>
+    <string name="nav_armario">Armario</string>
 
     <!-- Bienvenida, ingreso y registro -->
     <string name="bienvenida_propuesta">Descubre cómo te gusta vestirte, aprende a combinar lo que ya tienes y organiza tu ropa en un solo lugar.</string>

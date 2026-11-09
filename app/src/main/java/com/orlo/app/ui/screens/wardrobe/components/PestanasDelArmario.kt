@@ -36,6 +36,7 @@ import com.orlo.app.ui.screens.result.components.TarjetaDeEstilo
 import com.orlo.app.ui.utils.AppButton
 import com.orlo.app.ui.utils.AppOutlinedButton
 import com.orlo.app.ui.utils.EmptyMessage
+import com.orlo.app.ui.utils.coloresDeChip
 import com.orlo.app.ui.utils.formatearFecha
 
 // Prendas: filtros por categoria y color, y la cuadricula
@@ -64,6 +65,7 @@ fun PestanaPrendas(
                         selected = filtroCategoria == categoria,
                         onClick = { onFiltroCategoria(categoria) },
                         label = { Text(text = stringResource(categoria.etiqueta)) },
+                        colors = coloresDeChip(),
                     )
                 }
             }
@@ -77,6 +79,7 @@ fun PestanaPrendas(
                         selected = filtroColor == color.codigo,
                         onClick = { onFiltroColor(color.codigo) },
                         label = { Text(text = stringResource(color.etiqueta)) },
+                        colors = coloresDeChip(),
                     )
                 }
             }
