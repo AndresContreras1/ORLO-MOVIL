@@ -39,6 +39,7 @@ import com.orlo.app.data.datasource.impl.firestore.UsuarioFirestoreDataSourceImp
 import com.orlo.app.data.dtos.EstiloFirestoreDto
 import com.orlo.app.data.dtos.RegistrarUsuarioDto
 import com.orlo.app.data.dtos.ResultadoFirestoreDto
+import com.orlo.app.ui.utils.formatearFecha
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.runBlocking
@@ -180,6 +181,9 @@ class EscenariosE2E {
             preguntas++
         }
         esperar("resultScreen", timeoutMillis = 20_000)
+        // El resultado muestra el estilo con su nombre, su descripcion y su paleta
+        composeRule.onNodeWithText("Tu estilo").assertIsDisplayed()
+        composeRule.onNodeWithTag("paletaDelEstilo", useUnmergedTree = true).assertExists()
         composeRule.onNodeWithTag("btnContinuarResultado").performScrollTo().performClick()
 
         // Aprende: abre la primera leccion, la completa y el avance sube
@@ -206,6 +210,15 @@ class EscenariosE2E {
             composeRule.onAllNodesWithText("1 de", substring = true).fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithTag("avanceLecciones").assertTextContains("1 de", substring = true)
+
+        // Al volver a abrirla sigue completada
+        composeRule.onAllNodes(conPrefijo("leccion_")).onFirst().performClick()
+        esperar("lessonDetailScreen")
+        composeRule.waitUntil(timeoutMillis = 15_000) {
+            hay { composeRule.onAllNodes(hasScrollToNodeAction()).fetchSemanticsNodes().isNotEmpty() }
+        }
+        composeRule.onAllNodes(hasScrollToNodeAction()).onFirst().performScrollToNode(hasTestTag("leccionCompletada"))
+        composeRule.onNodeWithTag("leccionCompletada").assertIsDisplayed()
     }
 
     @Test
@@ -266,6 +279,8 @@ class EscenariosE2E {
         composeRule.onNodeWithTag("tab_HISTORIAL").performClick()
         esperar("pestanaHistorial")
         esperarTexto("Lunes de clase")
+        // Con la fecha de hoy
+        composeRule.onAllNodesWithText(formatearFecha(System.currentTimeMillis()), substring = true).onFirst().assertIsDisplayed()
         composeRule.onNodeWithText("Casual · urbano", substring = true).assertIsDisplayed()
     }
 
