@@ -1,0 +1,77 @@
+package com.orlo.app.data.repository
+
+import android.util.Log
+import com.orlo.app.data.datasource.AuthRemoteDataSource
+import com.orlo.app.data.datasource.UsuarioRemoteDataSource
+import com.orlo.app.data.dtos.RegistrarUsuarioDto
+import com.orlo.app.data.dtos.toCamposDePerfil
+import com.orlo.app.data.dtos.toPerfilUi
+import com.orlo.app.data.dtos.toResultadoFirestoreDto
+import com.orlo.app.data.dtos.toResultadoUi
+import com.orlo.app.data.model.PerfilUi
+import com.orlo.app.data.model.ResultadoUi
+import javax.inject.Inject
+
+// El perfil del usuario, sus resultados del cuestionario y su avance en Aprende. Todo se lee y se
+// escribe con el uid de la sesion: la app nunca pide datos de otro usuario
+class UsuarioRepository @Inject constructor(
+    private val usuarioRemoteDataSource: UsuarioRemoteDataSource,
+    private val authRemoteDataSource: AuthRemoteDataSource,
+) {
+
+    private fun uid(): String = authRemoteDataSource.currentUser?.uid ?: throw SinSesionException()
+
+    // Se llama justo despues de crear la cuenta en Authentication: el documento usa el mismo uid
+    suspend fun registrarUsuario(nombre: String, fecha: Long): Result<Unit> {
+        return try {
+            usuarioRemoteDataSource.registrarUsuario(
+                userId = uid(),
+                usuario = RegistrarUsuarioDto(name = nombre.trim(), acceptedTermsAt = fecha, createdAt = fecha)
+            )
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.d("UsuarioRepository", "registrarUsuario: ${e.message}")
+            Result.failure(errorDe(e))
+        }
+    }
+
+    // null si la cuenta existe pero todavia no tiene documento (se registro y se cerro la app)
+    suspend fun getPerfil(): Result<PerfilUi?> {
+        return try {
+            Result.success(usuarioRemoteDataSource.getUsuario(uid())?.toPerfilUi())
+        } catch (e: Exception) {
+            Log.d("UsuarioRepository", "getPerfil: ${e.message}")
+            Result.failure(errorDe(e))
+        }
+    }
+
+    suspend fun guardarPerfil(perfil: PerfilUi): Result<Unit> {
+        return try {
+            usuarioRemoteDataSource.actualizarPerfil(uid(), perfil.toCamposDePerfil())
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.d("UsuarioRepository", "guardarPerfil: ${e.message}")
+            Result.failure(errorDe(e))
+        }
+    }
+
+    // Queda en el historial y pasa a ser el resultado actual. Retorna el resultado con su id
+    suspend fun guardarResultado(resultado: ResultadoUi): Result<ResultadoUi> {
+        return try {
+            val id = usuarioRemoteDataSource.guardarResultado(uid(), resultado.toResultadoFirestoreDto())
+            Result.success(resultado.copy(id = id))
+        } catch (e: Exception) {
+            Log.d("UsuarioRepository", "guardarResultado: ${e.message}")
+            Result.failure(errorDe(e))
+        }
+    }
+
+    suspend fun getResultados(): Result<List<ResultadoUi>> {
+        return try {
+            Result.success(usuarioRemoteDataSource.getResultados(uid()).map { it.toResultadoUi() })
+        } catch (e: Exception) {
+            Log.d("UsuarioRepository", "getResultados: ${e.message}")
+            Result.failure(errorDe(e))
+        }
+    }
+}

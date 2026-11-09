@@ -1,0 +1,55 @@
+package com.orlo.app.data.datasource
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.ByteArrayOutputStream
+import javax.inject.Inject
+import kotlin.math.max
+
+// Lee la foto que el usuario eligio de la galeria y la comprime antes de subirla: las fotos se
+// guardan pequenas para ahorrar espacio y datos
+class ImagenLocalDataSource @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+
+    fun comprimir(uri: Uri): ByteArray {
+        // Primero solo se leen las medidas, para no cargar en memoria una foto enorme
+        val medidas = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, medidas) }
+
+        var escala = 1
+        while (max(medidas.outWidth, medidas.outHeight) / escala > LADO_MAXIMO * 2) {
+            escala *= 2
+        }
+
+        val opciones = BitmapFactory.Options().apply { inSampleSize = escala }
+        val original = context.contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, opciones)
+        } ?: throw IllegalArgumentException("No se pudo leer la imagen")
+
+        val ladoMayor = max(original.width, original.height)
+        val final = if (ladoMayor > LADO_MAXIMO) {
+            val factor = LADO_MAXIMO.toFloat() / ladoMayor
+            Bitmap.createScaledBitmap(
+                original,
+                (original.width * factor).toInt(),
+                (original.height * factor).toInt(),
+                true
+            )
+        } else {
+            original
+        }
+
+        val salida = ByteArrayOutputStream()
+        final.compress(Bitmap.CompressFormat.JPEG, CALIDAD_JPEG, salida)
+        return salida.toByteArray()
+    }
+
+    companion object {
+        const val LADO_MAXIMO = 1080
+        const val CALIDAD_JPEG = 80
+    }
+}

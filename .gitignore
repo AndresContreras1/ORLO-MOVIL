@@ -12,3 +12,6 @@
 *.apk
 *.aab
 .env
+
+# Emulador de Firebase
+*-debug.log
