@@ -2,11 +2,15 @@ package com.orlo.app.ui.utils
 
 import androidx.annotation.StringRes
 import com.orlo.app.R
+import com.orlo.app.data.repository.AsesorNoDisponibleException
 import com.orlo.app.data.repository.ContenidoNoEncontradoException
+import com.orlo.app.data.repository.ContrasenaDebilException
 import com.orlo.app.data.repository.CorreoNoRegistradoException
 import com.orlo.app.data.repository.CorreoYaRegistradoException
 import com.orlo.app.data.repository.CredencialesInvalidasException
+import com.orlo.app.data.repository.CuestionarioCambioException
 import com.orlo.app.data.repository.CuestionarioIncompletoException
+import com.orlo.app.data.repository.DatosInvalidosException
 import com.orlo.app.data.repository.DemasiadosIntentosException
 import com.orlo.app.data.repository.ErrorAlSubirImagenException
 import com.orlo.app.data.repository.ErrorDelServidorException
@@ -32,9 +36,13 @@ fun mensajeDeError(
     is CredencialesInvalidasException -> R.string.error_credenciales
     is CorreoNoRegistradoException -> R.string.error_correo_no_registrado
     is CorreoYaRegistradoException -> R.string.error_correo_ya_registrado
+    is ContrasenaDebilException -> R.string.error_contrasena_debil
     is DemasiadosIntentosException -> R.string.error_demasiados_intentos
     is PremiumRequeridoException -> R.string.error_premium_requerido
     is LimiteAlcanzadoException -> R.string.error_limite_alcanzado
+    is AsesorNoDisponibleException -> R.string.error_asesor_no_disponible
+    is CuestionarioCambioException -> R.string.error_cuestionario_cambio
+    is DatosInvalidosException -> R.string.error_datos_invalidos
     is ErrorAlSubirImagenException -> R.string.error_subir_imagen
     is CuestionarioIncompletoException -> R.string.error_cuestionario_incompleto
     else -> generico

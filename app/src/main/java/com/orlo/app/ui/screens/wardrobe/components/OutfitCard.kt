@@ -19,10 +19,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -41,13 +37,13 @@ fun OutfitCard(
     prendas: List<String>,
     onClick: () -> Unit,
     onFavorito: () -> Unit,
+    menuAbierto: Boolean,
+    onAbrirMenu: () -> Unit,
+    onCerrarMenu: () -> Unit,
     onDuplicar: () -> Unit,
     onBorrar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Estado solo de la vista: si el menu esta abierto
-    var menuAbierto by remember { mutableStateOf(false) }
-
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
@@ -75,17 +71,18 @@ fun OutfitCard(
                 )
             }
             Box(contentAlignment = Alignment.TopEnd) {
-                IconButton(onClick = { menuAbierto = true }) {
+                IconButton(onClick = onAbrirMenu) {
                     Icon(imageVector = Icons.Outlined.MoreVert, contentDescription = stringResource(R.string.mas_opciones))
                 }
-                DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
+                // El estado del menu lo tiene el ViewModel: la tarjeta solo avisa
+                DropdownMenu(expanded = menuAbierto, onDismissRequest = onCerrarMenu) {
                     DropdownMenuItem(
                         text = { Text(text = stringResource(R.string.duplicar)) },
-                        onClick = { menuAbierto = false; onDuplicar() },
+                        onClick = onDuplicar,
                     )
                     DropdownMenuItem(
                         text = { Text(text = stringResource(R.string.borrar)) },
-                        onClick = { menuAbierto = false; onBorrar() },
+                        onClick = onBorrar,
                     )
                 }
             }
@@ -100,7 +97,8 @@ fun OutfitCardPreview() {
         OutfitCard(
             outfit = OutfitUi(nombre = "Lunes de clase", favorito = true),
             prendas = listOf("Jean azul", "Camiseta blanca"),
-            onClick = {}, onFavorito = {}, onDuplicar = {}, onBorrar = {},
+            onClick = {}, onFavorito = {}, menuAbierto = false, onAbrirMenu = {}, onCerrarMenu = {},
+            onDuplicar = {}, onBorrar = {},
         )
     }
 }

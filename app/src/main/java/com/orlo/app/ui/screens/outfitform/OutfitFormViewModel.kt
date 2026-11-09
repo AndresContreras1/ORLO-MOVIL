@@ -24,16 +24,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class OutfitFormState(
-    val outfit: OutfitUi = OutfitUi(),
-    val prendas: List<PrendaUi> = emptyList(),
-    val esNuevo: Boolean = true,
-    val isLoading: Boolean = true,
-    @StringRes val errorMessageRes: Int? = null,
-    val guardando: Boolean = false,
-    val navigateBack: Boolean = false,
-)
-
 // Crear un outfit eligiendo prendas del armario, o editar uno (tambien los del asesor)
 @HiltViewModel
 class OutfitFormViewModel @Inject constructor(
@@ -46,7 +36,7 @@ class OutfitFormViewModel @Inject constructor(
 
     fun cargar(outfitId: String?) {
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(isLoading = true, esNuevo = outfitId.isNullOrBlank(), errorMessageRes = null) }
+            _uiState.update { it.copy(isLoading = true, esNuevo = outfitId.isNullOrBlank(), errorCargaRes = null) }
             coroutineScope {
                 val prendasAsync = async { armarioRepository.getPrendas() }
                 val outfitAsync = async {
@@ -60,7 +50,7 @@ class OutfitFormViewModel @Inject constructor(
                 } else {
                     val error = outfit.exceptionOrNull() ?: prendas.exceptionOrNull()
                     Log.d("OutfitFormViewModel", error?.message.toString())
-                    _uiState.update { it.copy(isLoading = false, errorMessageRes = mensajeDeError(error, R.string.error_cargar_outfit)) }
+                    _uiState.update { it.copy(isLoading = false, errorCargaRes = mensajeDeError(error, R.string.error_cargar_outfit)) }
                 }
             }
         }
@@ -96,8 +86,8 @@ class OutfitFormViewModel @Inject constructor(
             return
         }
 
+        _uiState.update { it.copy(guardando = true, errorMessageRes = null) }
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(guardando = true, errorMessageRes = null) }
             val result = armarioRepository.guardarOutfit(estado.outfit, System.currentTimeMillis())
             if (result.isSuccess) {
                 _uiState.update { it.copy(guardando = false, navigateBack = true) }

@@ -11,17 +11,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.orlo.app.R
+import com.orlo.app.ui.theme.OrloTheme
 import coil.request.ImageRequest
 
-// Imagen de internet (o una Uri del celular) con Coil: aparece con un desvanecido y, mientras carga
-// o si falla, queda el fondo suave en vez de un hueco
+// Imagen de internet (o una Uri del celular) con Coil: aparece con un desvanecido. Mientras carga
+// queda el fondo suave y, si falla o no hay foto, un icono de imagen en vez de un hueco
 @Composable
 fun OrloAsyncImage(
     url: Any?,
@@ -33,6 +37,8 @@ fun OrloAsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
             .data(url)
             .crossfade(true)
+            .error(R.drawable.ic_imagen_no_disponible)
+            .fallback(R.drawable.ic_imagen_no_disponible)
             .build(),
         contentDescription = contentDescription,
         contentScale = contentScale,
@@ -62,5 +68,21 @@ fun PickImageButton(
         Icon(imageVector = Icons.Outlined.AddPhotoAlternate, contentDescription = null)
         Spacer(modifier = Modifier.width(8.dp))
         Text(text = texto)
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun OrloAsyncImageSinFotoPreview() {
+    OrloTheme {
+        OrloAsyncImage(url = null, contentDescription = null, modifier = Modifier.size(140.dp))
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun PickImageButtonPreview() {
+    OrloTheme {
+        PickImageButton(texto = "Elegir foto", onImagePicked = {})
     }
 }

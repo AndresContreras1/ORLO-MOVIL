@@ -6,6 +6,7 @@ import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.orlo.app.data.datasource.AuthRemoteDataSource
 import javax.inject.Inject
 
@@ -52,6 +53,10 @@ class AuthRepository @Inject constructor(
         } catch (e: FirebaseAuthUserCollisionException) {
             Log.d("AuthRepository", "signUp: ${e.message}")
             Result.failure(CorreoYaRegistradoException())
+        } catch (e: FirebaseAuthWeakPasswordException) {
+            // Va antes de InvalidCredentials porque es una subclase suya
+            Log.d("AuthRepository", "signUp: ${e.message}")
+            Result.failure(ContrasenaDebilException())
         } catch (e: FirebaseAuthInvalidCredentialsException) {
             Log.d("AuthRepository", "signUp: ${e.message}")
             Result.failure(CredencialesInvalidasException())

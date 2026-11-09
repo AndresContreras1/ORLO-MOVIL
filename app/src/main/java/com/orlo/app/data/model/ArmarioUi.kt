@@ -49,6 +49,7 @@ data class PrendaUi(
     val categoria: CategoriaPrenda = CategoriaPrenda.OTRO,
     val color: String = "",
     val fotoUrl: String? = null,
+    val favorita: Boolean = false,
     val fecha: Long = 0,
 )
 

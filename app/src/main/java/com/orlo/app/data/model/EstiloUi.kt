@@ -3,7 +3,7 @@ package com.orlo.app.data.model
 // Un estilo base (casual, urbano, clasico...) como lo muestra la app. Ningun estilo es mejor que
 // otro: todos tienen los mismos campos
 data class EstiloUi(
-    val id: Long = 0,
+    val id: String = "",
     val code: String = "",
     val nombre: String = "",
     val descripcion: String = "",

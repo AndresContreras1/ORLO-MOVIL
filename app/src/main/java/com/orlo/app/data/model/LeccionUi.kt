@@ -14,7 +14,7 @@ enum class EstadoLeccion(val codigo: String) {
 
 // Una capsula en la lista de Aprende
 data class LeccionResumenUi(
-    val id: Long = 0,
+    val id: String = "",
     val titulo: String = "",
     val resumen: String = "",
     val orden: Int = 0,
@@ -26,7 +26,7 @@ data class LeccionResumenUi(
 
 // El contenido completo de una capsula: idea principal, ejemplos, consejo y repaso opcional
 data class LeccionUi(
-    val id: Long = 0,
+    val id: String = "",
     val titulo: String = "",
     val ideaPrincipal: String = "",
     val ejemplos: List<EjemploUi> = emptyList(),

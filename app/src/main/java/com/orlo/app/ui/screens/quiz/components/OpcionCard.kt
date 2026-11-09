@@ -68,6 +68,6 @@ fun OpcionCard(
 @Preview(showBackground = true, widthDp = 180)
 fun OpcionCardPreview() {
     OrloTheme {
-        OpcionCard(opcion = OpcionUi(id = 1, texto = "Camisetas"), seleccionada = true, onClick = {})
+        OpcionCard(opcion = OpcionUi(id = "1", texto = "Camisetas"), seleccionada = true, onClick = {})
     }
 }

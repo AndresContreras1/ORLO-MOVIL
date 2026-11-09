@@ -1,5 +1,6 @@
 package com.orlo.app.ui.screens.welcome
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,15 +9,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.border
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,16 +44,17 @@ fun WelcomeScreen(
         ) {
             Spacer(modifier = Modifier.weight(1F))
 
-            // La O de ORLO, igual que en el icono
-            Box(
-                modifier = Modifier
-                    .size(88.dp)
-                    .border(8.dp, MaterialTheme.colorScheme.primary, CircleShape)
+            // El logo: el aro colgado del gancho, con el color de acento del tema
+            Icon(
+                painter = painterResource(R.drawable.ic_orlo_simbolo),
+                contentDescription = stringResource(R.string.logo_descripcion),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(width = 64.dp, height = 80.dp),
             )
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineLarge,
+                text = stringResource(R.string.marca),
+                style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -83,6 +86,14 @@ fun WelcomeScreen(
 @Composable
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 fun WelcomeScreenPreview() {
+    OrloTheme {
+        WelcomeScreen(onEmpezar = {}, onYaTengoCuenta = {})
+    }
+}
+
+@Composable
+@Preview(showBackground = true, widthDp = 393, heightDp = 852, uiMode = Configuration.UI_MODE_NIGHT_YES)
+fun WelcomeScreenOscuroPreview() {
     OrloTheme {
         WelcomeScreen(onEmpezar = {}, onYaTengoCuenta = {})
     }

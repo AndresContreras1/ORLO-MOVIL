@@ -40,6 +40,10 @@ fun AppNavigation(
 
     fun irAPremium() = navController.navigate(Screen.Paywall.route)
 
+    fun irAEditarPerfil() = navController.navigate(Screen.ProfileSetup.createRoute(edit = true))
+
+    fun volver() = navController.popBackStack()
+
     NavHost(
         navController = navController,
         startDestination = Screen.Splash.route,
@@ -98,7 +102,7 @@ fun AppNavigation(
                 // En el registro sigue el cuestionario; al editar, se vuelve a donde estaba
                 onGuardado = {
                     if (editando) {
-                        navController.popBackStack()
+                        volver()
                     } else {
                         navController.navigate(Screen.Quiz.route) { popUpTo(0) { inclusive = true } }
                     }
@@ -116,21 +120,16 @@ fun AppNavigation(
         composable(Screen.Result.route) {
             ResultScreen(
                 resultViewModel = hiltViewModel(),
-                onContinuar = { premium ->
-                    if (premium) {
-                        irAInicio()
-                    } else {
-                        navController.navigate(Screen.Paywall.route) { popUpTo(0) { inclusive = true } }
-                    }
-                },
+                onContinuar = { irAInicio() },
             )
         }
 
         // "Ahora no" vuelve a donde estaba; si no hay a donde volver, va al inicio
         composable(Screen.Paywall.route) {
             PaywallScreen(
+                paywallViewModel = hiltViewModel(),
                 onAhoraNo = {
-                    if (!navController.popBackStack()) irAInicio()
+                    if (!volver()) irAInicio()
                 },
             )
         }
@@ -157,14 +156,14 @@ fun AppNavigation(
 
         composable(
             route = Screen.LessonDetail.route,
-            arguments = listOf(navArgument("lessonId") { type = NavType.LongType }),
+            arguments = listOf(navArgument("lessonId") { type = NavType.StringType }),
         ) {
             LessonDetailScreen(
                 lessonDetailViewModel = hiltViewModel(),
-                leccionId = it.arguments?.getLong("lessonId") ?: 0L,
-                onBack = { navController.popBackStack() },
+                leccionId = it.arguments?.getString("lessonId") ?: "",
+                onBack = { volver() },
                 onPremium = { irAPremium() },
-                onCompletarPerfil = { navController.navigate(Screen.ProfileSetup.createRoute(edit = true)) },
+                onCompletarPerfil = { irAEditarPerfil() },
             )
         }
 
@@ -191,7 +190,7 @@ fun AppNavigation(
                 onNuevoOutfit = { navController.navigate(Screen.OutfitForm.BASE) },
                 onOutfit = { navController.navigate(Screen.OutfitForm.createRoute(it)) },
                 onConversacion = { navController.navigate(Screen.Advisor.createRoute(it)) },
-                onEditarPreferencias = { navController.navigate(Screen.ProfileSetup.createRoute(edit = true)) },
+                onEditarPreferencias = { irAEditarPerfil() },
                 onRehacerCuestionario = { navController.navigate(Screen.Quiz.route) },
                 onPremium = { irAPremium() },
             )
@@ -204,7 +203,7 @@ fun AppNavigation(
             GarmentFormScreen(
                 garmentFormViewModel = hiltViewModel(),
                 prendaId = it.arguments?.getString("garmentId"),
-                onBack = { navController.popBackStack() },
+                onBack = { volver() },
             )
         }
 
@@ -215,15 +214,15 @@ fun AppNavigation(
             OutfitFormScreen(
                 outfitFormViewModel = hiltViewModel(),
                 outfitId = it.arguments?.getString("outfitId"),
-                onBack = { navController.popBackStack() },
+                onBack = { volver() },
             )
         }
 
         composable(Screen.Account.route) {
             AccountScreen(
                 accountViewModel = hiltViewModel(),
-                onBack = { navController.popBackStack() },
-                onEditarDatos = { navController.navigate(Screen.ProfileSetup.createRoute(edit = true)) },
+                onBack = { volver() },
+                onEditarDatos = { irAEditarPerfil() },
                 onPremium = { irAPremium() },
                 onSalir = { irABienvenida() },
             )

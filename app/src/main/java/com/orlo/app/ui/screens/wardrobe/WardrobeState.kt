@@ -26,6 +26,8 @@ data class WardrobeState(
     @StringRes val errorMessageRes: Int? = null,
     // El outfit que se va a borrar, mientras se confirma
     val outfitPorBorrar: OutfitUi? = null,
+    // El outfit con el menu de opciones abierto (duplicar, borrar)
+    val outfitConMenu: String? = null,
 ) {
     val premium: Boolean get() = cuenta?.premium == true
 

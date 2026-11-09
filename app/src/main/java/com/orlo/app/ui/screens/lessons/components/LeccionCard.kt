@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.orlo.app.R
+import com.orlo.app.data.local.LocalPreviewProvider
 import com.orlo.app.data.model.EstadoLeccion
 import com.orlo.app.data.model.LeccionResumenUi
 import com.orlo.app.ui.theme.OrloTheme
@@ -102,7 +103,7 @@ fun LeccionCard(
 fun LeccionCardPreview() {
     OrloTheme {
         LeccionCard(
-            leccion = LeccionResumenUi(id = 1, titulo = "Conoce tu cuerpo", resumen = "Cómo los cortes cambian el efecto visual", minutos = 4, muestraGratis = true, estado = EstadoLeccion.EN_CURSO),
+            leccion = LocalPreviewProvider.lecciones.first(),
             bloqueada = false, onClick = {},
         )
     }

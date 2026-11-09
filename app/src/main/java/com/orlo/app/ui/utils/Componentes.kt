@@ -104,9 +104,11 @@ fun ConfirmDialog(
     confirmar: String,
     onConfirmar: () -> Unit,
     onCancelar: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     AlertDialog(
         onDismissRequest = onCancelar,
+        modifier = modifier,
         title = { Text(text = titulo) },
         text = { Text(text = texto) },
         confirmButton = {
@@ -134,6 +136,28 @@ fun PremiumGatePreview() {
             titulo = "Asesor IA",
             descripcion = "Pregunta qué ponerte y recibe opciones con tu estilo.",
             onVerPlanes = {},
+        )
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun ScreenTitlePreview() {
+    OrloTheme {
+        ScreenTitle(titulo = "Mi armario", subtitulo = "Tus prendas, outfits e historial")
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun ConfirmDialogPreview() {
+    OrloTheme {
+        ConfirmDialog(
+            titulo = "Borrar outfit",
+            texto = "Se borra \"Lunes de clase\" de tu armario.",
+            confirmar = "Borrar",
+            onConfirmar = {},
+            onCancelar = {},
         )
     }
 }

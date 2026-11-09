@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -29,9 +30,9 @@ import androidx.compose.ui.unit.dp
 import com.orlo.app.R
 import com.orlo.app.data.model.CuentaUi
 import com.orlo.app.ui.theme.OrloTheme
-import com.orlo.app.ui.utils.AppButton
 import com.orlo.app.ui.utils.AppOutlinedButton
 import com.orlo.app.ui.utils.ConfirmDialog
+import com.orlo.app.ui.utils.ErrorBox
 import com.orlo.app.ui.utils.ErrorMessage
 import com.orlo.app.ui.utils.LoadingBox
 
@@ -47,6 +48,11 @@ fun AccountScreen(
 ) {
     val state by accountViewModel.uiState.collectAsState()
 
+    // Carga al entrar y al volver de editar los datos
+    LaunchedEffect(Unit) {
+        accountViewModel.cargar()
+    }
+
     LaunchedEffect(state.salir) {
         if (state.salir) onSalir()
     }
@@ -61,12 +67,15 @@ fun AccountScreen(
         )
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().testTag("accountScreen")) {
         IconButton(onClick = onBack, modifier = Modifier.padding(start = 8.dp, top = 8.dp)) {
             Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.atras))
         }
+        val errorCarga = state.errorCargaRes
         if (state.isLoading) {
             LoadingBox()
+        } else if (errorCarga != null) {
+            ErrorBox(messageRes = errorCarga, onRetry = { accountViewModel.cargar() })
         } else {
             AccountScreenContent(
                 state = state,
@@ -93,8 +102,7 @@ fun AccountScreenContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
-            .padding(bottom = 24.dp)
-            .testTag("accountScreen"),
+            .padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(text = stringResource(R.string.cuenta_titulo), style = MaterialTheme.typography.headlineMedium)
@@ -139,12 +147,17 @@ fun AccountScreenContent(
         HorizontalDivider(thickness = 1.dp)
         ErrorMessage(messageRes = state.errorMessageRes)
         AppOutlinedButton(texto = stringResource(R.string.cerrar_sesion), onClick = onCerrarSesion, modifier = Modifier.testTag("btnCerrarSesion"))
-        AppButton(
-            texto = stringResource(R.string.eliminar_cuenta),
+        // La accion destructiva va con el color de error y al final, no con el acento
+        TextButton(
             onClick = onBorrarCuenta,
-            cargando = state.borrando,
-            modifier = Modifier.testTag("btnEliminarCuenta"),
-        )
+            enabled = !state.borrando,
+            modifier = Modifier.align(Alignment.CenterHorizontally).testTag("btnEliminarCuenta"),
+        ) {
+            Text(
+                text = stringResource(if (state.borrando) R.string.eliminando_cuenta else R.string.eliminar_cuenta),
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     }
 }
 

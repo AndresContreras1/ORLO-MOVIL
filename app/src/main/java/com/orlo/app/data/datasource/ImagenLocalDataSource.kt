@@ -9,16 +9,18 @@ import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import kotlin.math.max
 
-// Lee la foto que el usuario eligio de la galeria y la comprime antes de subirla: las fotos se
-// guardan pequenas para ahorrar espacio y datos
+// Lee la foto que el usuario eligio (galeria, archivo o camara) y la comprime antes de subirla: las
+// fotos se guardan pequenas para ahorrar espacio y datos. Si no se puede leer, retorna null y el
+// repositorio decide el error
 class ImagenLocalDataSource @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
 
-    fun comprimir(uri: Uri): ByteArray {
+    fun comprimir(uri: Uri): ByteArray? {
         // Primero solo se leen las medidas, para no cargar en memoria una foto enorme
         val medidas = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, medidas) }
+        if (medidas.outWidth <= 0 || medidas.outHeight <= 0) return null
 
         var escala = 1
         while (max(medidas.outWidth, medidas.outHeight) / escala > LADO_MAXIMO * 2) {
@@ -28,7 +30,7 @@ class ImagenLocalDataSource @Inject constructor(
         val opciones = BitmapFactory.Options().apply { inSampleSize = escala }
         val original = context.contentResolver.openInputStream(uri)?.use {
             BitmapFactory.decodeStream(it, null, opciones)
-        } ?: throw IllegalArgumentException("No se pudo leer la imagen")
+        } ?: return null
 
         val ladoMayor = max(original.width, original.height)
         val final = if (ladoMayor > LADO_MAXIMO) {

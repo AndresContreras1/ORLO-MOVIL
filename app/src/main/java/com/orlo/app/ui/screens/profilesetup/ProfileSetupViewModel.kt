@@ -7,6 +7,7 @@ import com.orlo.app.R
 import com.orlo.app.data.injection.IoDispatcher
 import com.orlo.app.data.model.MAX_NOMBRE_LENGTH
 import com.orlo.app.data.model.PerfilUi
+import com.orlo.app.data.repository.ContenidoNoEncontradoException
 import com.orlo.app.data.repository.UsuarioRepository
 import com.orlo.app.ui.utils.mensajeDeError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,7 +39,8 @@ class ProfileSetupViewModel @Inject constructor(
         viewModelScope.launch(ioDispatcher) {
             _uiState.update { it.copy(isLoading = true, errorCargaRes = null) }
             val result = usuarioRepository.getPerfil()
-            if (result.isSuccess) {
+            val error = result.exceptionOrNull()
+            if (result.isSuccess || error is ContenidoNoEncontradoException) {
                 // Sin documento todavia se empieza con el perfil vacio
                 val perfil = result.getOrNull() ?: PerfilUi()
                 _uiState.update { it.copy(isLoading = false, perfil = perfil) }
@@ -105,8 +107,8 @@ class ProfileSetupViewModel @Inject constructor(
             return
         }
 
+        _uiState.update { it.copy(guardando = true, errorMessageRes = null) }
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(guardando = true, errorMessageRes = null) }
             val result = usuarioRepository.guardarPerfil(estado.perfil)
             if (result.isSuccess) {
                 _uiState.update { it.copy(guardando = false, navigate = true) }

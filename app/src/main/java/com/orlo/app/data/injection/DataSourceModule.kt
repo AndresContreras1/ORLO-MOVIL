@@ -2,21 +2,25 @@ package com.orlo.app.data.injection
 
 import com.orlo.app.data.datasource.ArmarioRemoteDataSource
 import com.orlo.app.data.datasource.AsesorRemoteDataSource
-import com.orlo.app.data.datasource.ContenidoRemoteDataSource
 import com.orlo.app.data.datasource.ConversacionRemoteDataSource
+import com.orlo.app.data.datasource.CuentaRemoteDataSource
+import com.orlo.app.data.datasource.CuestionarioRemoteDataSource
+import com.orlo.app.data.datasource.LeccionRemoteDataSource
 import com.orlo.app.data.datasource.UsuarioRemoteDataSource
 import com.orlo.app.data.datasource.impl.firestore.ArmarioFirestoreDataSourceImpl
 import com.orlo.app.data.datasource.impl.firestore.ConversacionFirestoreDataSourceImpl
 import com.orlo.app.data.datasource.impl.firestore.UsuarioFirestoreDataSourceImpl
 import com.orlo.app.data.datasource.impl.retrofit.AsesorRetrofitDataSourceImpl
-import com.orlo.app.data.datasource.impl.retrofit.ContenidoRetrofitDataSourceImpl
+import com.orlo.app.data.datasource.impl.retrofit.CuentaRetrofitDataSourceImpl
+import com.orlo.app.data.datasource.impl.retrofit.CuestionarioRetrofitDataSourceImpl
+import com.orlo.app.data.datasource.impl.retrofit.LeccionRetrofitDataSourceImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
 // Los repositorios reciben el contrato y aqui se decide que implementacion entrega Hilt: los datos
-// privados del usuario van a Firestore y el contenido y el asesor al backend por Retrofit
+// privados del usuario van a Firestore y el contenido, el asesor y la cuenta al backend por Retrofit
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class DataSourceModule {
@@ -33,8 +37,16 @@ abstract class DataSourceModule {
     ): ConversacionRemoteDataSource
 
     @Binds
-    abstract fun bindContenidoRemoteDataSource(impl: ContenidoRetrofitDataSourceImpl): ContenidoRemoteDataSource
+    abstract fun bindCuestionarioRemoteDataSource(
+        impl: CuestionarioRetrofitDataSourceImpl
+    ): CuestionarioRemoteDataSource
+
+    @Binds
+    abstract fun bindLeccionRemoteDataSource(impl: LeccionRetrofitDataSourceImpl): LeccionRemoteDataSource
 
     @Binds
     abstract fun bindAsesorRemoteDataSource(impl: AsesorRetrofitDataSourceImpl): AsesorRemoteDataSource
+
+    @Binds
+    abstract fun bindCuentaRemoteDataSource(impl: CuentaRetrofitDataSourceImpl): CuentaRemoteDataSource
 }

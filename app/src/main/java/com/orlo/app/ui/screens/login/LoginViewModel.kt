@@ -58,9 +58,8 @@ class LoginViewModel @Inject constructor(
             return
         }
 
+        _uiState.update { it.copy(cargando = true, errorMessageRes = null) }
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(cargando = true, errorMessageRes = null) }
-
             val result = authRepository.signIn(email = estado.email, password = estado.contrasena)
 
             if (result.isSuccess) {

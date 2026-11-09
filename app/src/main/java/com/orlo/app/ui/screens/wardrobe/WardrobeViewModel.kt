@@ -107,7 +107,7 @@ class WardrobeViewModel @Inject constructor(
             estado.copy(outfits = estado.outfits.map { if (it.id == outfit.id) it.copy(favorito = nuevo) else it })
         }
         viewModelScope.launch(ioDispatcher) {
-            val result = armarioRepository.marcarFavorito(outfit.id, nuevo)
+            val result = armarioRepository.marcarOutfitFavorito(outfit.id, nuevo)
             if (result.isFailure) {
                 Log.d("WardrobeViewModel", result.exceptionOrNull()?.message.toString())
                 _uiState.update { estado ->
@@ -121,6 +121,7 @@ class WardrobeViewModel @Inject constructor(
     }
 
     fun duplicar(outfit: OutfitUi, sufijo: String) {
+        _uiState.update { it.copy(outfitConMenu = null) }
         viewModelScope.launch(ioDispatcher) {
             val result = armarioRepository.duplicarOutfit(outfit, sufijo, System.currentTimeMillis())
             if (result.isSuccess) {
@@ -132,8 +133,16 @@ class WardrobeViewModel @Inject constructor(
         }
     }
 
+    fun abrirMenu(outfitId: String) {
+        _uiState.update { it.copy(outfitConMenu = outfitId) }
+    }
+
+    fun cerrarMenu() {
+        _uiState.update { it.copy(outfitConMenu = null) }
+    }
+
     fun pedirBorrarOutfit(outfit: OutfitUi) {
-        _uiState.update { it.copy(outfitPorBorrar = outfit) }
+        _uiState.update { it.copy(outfitPorBorrar = outfit, outfitConMenu = null) }
     }
 
     fun cancelarBorrarOutfit() {

@@ -10,12 +10,25 @@ import com.orlo.app.data.model.OutfitUi
 import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.model.RolMensaje
 
+// Para cada entidad hay un DTO de lectura (con el id del documento) y uno de escritura sin id: el id
+// es el del documento, no un campo que se guarde
+
 data class PrendaFirestoreDto(
     val id: String = "",
     val name: String = "",
     val category: String = "",
     val color: String = "",
     val photoUrl: String? = null,
+    val favorite: Boolean = false,
+    val createdAt: Long = 0,
+)
+
+data class GuardarPrendaDto(
+    val name: String = "",
+    val category: String = "",
+    val color: String = "",
+    val photoUrl: String? = null,
+    val favorite: Boolean = false,
     val createdAt: Long = 0,
 )
 
@@ -25,20 +38,32 @@ fun PrendaFirestoreDto.toPrendaUi(): PrendaUi = PrendaUi(
     categoria = CategoriaPrenda.desdeCodigo(category),
     color = color,
     fotoUrl = photoUrl,
+    favorita = favorite,
     fecha = createdAt,
 )
 
-fun PrendaUi.toPrendaFirestoreDto(): PrendaFirestoreDto = PrendaFirestoreDto(
-    id = id,
+fun PrendaUi.toGuardarPrendaDto(): GuardarPrendaDto = GuardarPrendaDto(
     name = nombre.trim(),
     category = categoria.codigo,
     color = color,
     photoUrl = fotoUrl,
+    favorite = favorita,
     createdAt = fecha,
 )
 
 data class OutfitFirestoreDto(
     val id: String = "",
+    val name: String = "",
+    val occasion: String = "",
+    val garmentIds: List<String> = emptyList(),
+    val itemsText: List<String> = emptyList(),
+    val why: String = "",
+    val origin: String = "",
+    val favorite: Boolean = false,
+    val createdAt: Long = 0,
+)
+
+data class GuardarOutfitDto(
     val name: String = "",
     val occasion: String = "",
     val garmentIds: List<String> = emptyList(),
@@ -61,8 +86,7 @@ fun OutfitFirestoreDto.toOutfitUi(): OutfitUi = OutfitUi(
     fecha = createdAt,
 )
 
-fun OutfitUi.toOutfitFirestoreDto(): OutfitFirestoreDto = OutfitFirestoreDto(
-    id = id,
+fun OutfitUi.toGuardarOutfitDto(): GuardarOutfitDto = GuardarOutfitDto(
     name = nombre.trim(),
     occasion = ocasion.codigo,
     garmentIds = prendasIds,
@@ -101,20 +125,30 @@ data class MensajeFirestoreDto(
     val createdAt: Long = 0,
 )
 
+data class GuardarMensajeDto(
+    val role: String = "",
+    val text: String = "",
+    val outfits: List<OutfitPropuestoFirestoreDto> = emptyList(),
+    val followUpQuestion: String? = null,
+    val createdAt: Long = 0,
+)
+
 fun MensajeFirestoreDto.toMensajeChatUi(): MensajeChatUi = MensajeChatUi(
     id = id,
-    rol = if (role == "assistant") RolMensaje.ASESOR else RolMensaje.USUARIO,
+    rol = if (role == ROL_ASESOR) RolMensaje.ASESOR else RolMensaje.USUARIO,
     texto = text,
     outfits = outfits.map { OutfitPropuestoUi(titulo = it.title, prendas = it.items, porQue = it.why) },
     preguntaSeguimiento = followUpQuestion,
     fecha = createdAt,
 )
 
-fun MensajeChatUi.toMensajeFirestoreDto(): MensajeFirestoreDto = MensajeFirestoreDto(
-    id = id,
-    role = if (rol == RolMensaje.ASESOR) "assistant" else "user",
+fun MensajeChatUi.toGuardarMensajeDto(): GuardarMensajeDto = GuardarMensajeDto(
+    role = if (rol == RolMensaje.ASESOR) ROL_ASESOR else ROL_USUARIO,
     text = texto,
     outfits = outfits.map { OutfitPropuestoFirestoreDto(title = it.titulo, items = it.prendas, why = it.porQue) },
     followUpQuestion = preguntaSeguimiento,
     createdAt = fecha,
 )
+
+const val ROL_USUARIO = "user"
+const val ROL_ASESOR = "assistant"

@@ -1,6 +1,5 @@
 package com.orlo.app.data.dtos
 
-import com.orlo.app.data.model.CuentaUi
 import com.orlo.app.data.model.MensajeChatUi
 import com.orlo.app.data.model.OutfitPropuestoUi
 import com.orlo.app.data.model.RespuestaAsesorUi
@@ -70,19 +69,5 @@ fun RespuestaAsesorDto.toRespuestaAsesorUi(fecha: Long): RespuestaAsesorUi = Res
         preguntaSeguimiento = followUpQuestion?.takeIf { it.isNotBlank() },
         fecha = fecha,
     ),
-    mensajesRestantes = remainingMessages ?: 0,
-)
-
-data class CuentaDto(
-    val uid: String? = null,
-    val premium: Boolean? = null,
-    val dailyLimit: Int? = null,
-    val remainingMessages: Int? = null,
-)
-
-fun CuentaDto.toCuentaUi(): CuentaUi = CuentaUi(
-    uid = uid ?: "",
-    premium = premium ?: false,
-    limiteDiario = dailyLimit ?: 0,
     mensajesRestantes = remainingMessages ?: 0,
 )

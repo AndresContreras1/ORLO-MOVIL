@@ -1,5 +1,6 @@
 package com.orlo.app.data.datasource
 
+import com.orlo.app.data.dtos.ActualizarPerfilDto
 import com.orlo.app.data.dtos.ProgresoLeccionFirestoreDto
 import com.orlo.app.data.dtos.RegistrarUsuarioDto
 import com.orlo.app.data.dtos.ResultadoFirestoreDto
@@ -9,11 +10,11 @@ import com.orlo.app.data.dtos.UsuarioFirestoreDto
 // Retorna DTOs; null cuando el documento no existe
 interface UsuarioRemoteDataSource {
 
-    suspend fun registrarUsuario(userId: String, usuario: RegistrarUsuarioDto)
+    suspend fun registrarUsuario(userId: String, usuario: RegistrarUsuarioDto): Unit
 
     suspend fun getUsuario(userId: String): UsuarioFirestoreDto?
 
-    suspend fun actualizarPerfil(userId: String, campos: Map<String, Any>)
+    suspend fun actualizarPerfil(userId: String, perfil: ActualizarPerfilDto): Unit
 
     // Guarda el resultado en el historial y lo deja como resultado actual; retorna el id
     suspend fun guardarResultado(userId: String, resultado: ResultadoFirestoreDto): String
@@ -22,8 +23,8 @@ interface UsuarioRemoteDataSource {
 
     suspend fun getProgresoLecciones(userId: String): List<ProgresoLeccionFirestoreDto>
 
-    suspend fun guardarProgresoLeccion(userId: String, progreso: ProgresoLeccionFirestoreDto)
+    suspend fun guardarProgresoLeccion(userId: String, progreso: ProgresoLeccionFirestoreDto): Unit
 
     // Borra el documento del usuario y todas sus subcolecciones (derecho de supresion)
-    suspend fun borrarDatosDelUsuario(userId: String)
+    suspend fun borrarDatosDelUsuario(userId: String): Unit
 }

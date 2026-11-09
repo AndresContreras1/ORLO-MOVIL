@@ -25,7 +25,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.orlo.app.R
-import com.orlo.app.data.model.CuentaUi
+import com.orlo.app.data.local.LocalPreviewProvider
+import com.orlo.app.data.model.CategoriaPrenda
 import com.orlo.app.data.model.OutfitUi
 import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.ui.screens.wardrobe.components.PestanaHistorial
@@ -94,6 +95,8 @@ fun WardrobeScreen(
                 onNuevoOutfit = onNuevoOutfit,
                 onOutfit = { onOutfit(it.id) },
                 onFavorito = { wardrobeViewModel.marcarFavorito(it) },
+                onAbrirMenu = { wardrobeViewModel.abrirMenu(it.id) },
+                onCerrarMenu = { wardrobeViewModel.cerrarMenu() },
                 onDuplicar = { wardrobeViewModel.duplicar(it, sufijoCopia) },
                 onBorrarOutfit = { wardrobeViewModel.pedirBorrarOutfit(it) },
                 onConversacion = onConversacion,
@@ -109,13 +112,15 @@ fun WardrobeScreen(
 fun WardrobeScreenContent(
     state: WardrobeState,
     onPestana: (PestanaArmario) -> Unit,
-    onFiltroCategoria: (com.orlo.app.data.model.CategoriaPrenda) -> Unit,
+    onFiltroCategoria: (CategoriaPrenda) -> Unit,
     onFiltroColor: (String) -> Unit,
     onNuevaPrenda: () -> Unit,
     onPrenda: (PrendaUi) -> Unit,
     onNuevoOutfit: () -> Unit,
     onOutfit: (OutfitUi) -> Unit,
     onFavorito: (OutfitUi) -> Unit,
+    onAbrirMenu: (OutfitUi) -> Unit,
+    onCerrarMenu: () -> Unit,
     onDuplicar: (OutfitUi) -> Unit,
     onBorrarOutfit: (OutfitUi) -> Unit,
     onConversacion: (String) -> Unit,
@@ -159,6 +164,9 @@ fun WardrobeScreenContent(
                     nombresDePrendas = { state.nombresDePrendas(it) },
                     onOutfit = onOutfit,
                     onFavorito = onFavorito,
+                    outfitConMenu = state.outfitConMenu,
+                    onAbrirMenu = onAbrirMenu,
+                    onCerrarMenu = onCerrarMenu,
                     onDuplicar = onDuplicar,
                     onBorrar = onBorrarOutfit,
                 )
@@ -203,9 +211,15 @@ fun WardrobeScreenContent(
 fun WardrobeScreenPreview() {
     OrloTheme {
         WardrobeScreenContent(
-            state = WardrobeState(isLoading = false, cuenta = CuentaUi(premium = true), prendas = listOf(PrendaUi(id = "1", nombre = "Jean azul", color = "azul"))),
+            state = WardrobeState(
+                isLoading = false,
+                cuenta = LocalPreviewProvider.cuenta,
+                prendas = LocalPreviewProvider.prendas,
+                outfits = LocalPreviewProvider.outfits,
+            ),
             onPestana = {}, onFiltroCategoria = {}, onFiltroColor = {}, onNuevaPrenda = {}, onPrenda = {},
-            onNuevoOutfit = {}, onOutfit = {}, onFavorito = {}, onDuplicar = {}, onBorrarOutfit = {},
+            onNuevoOutfit = {}, onOutfit = {}, onFavorito = {}, onAbrirMenu = {}, onCerrarMenu = {},
+            onDuplicar = {}, onBorrarOutfit = {},
             onConversacion = {}, onEditarPreferencias = {}, onRehacerCuestionario = {},
         )
     }

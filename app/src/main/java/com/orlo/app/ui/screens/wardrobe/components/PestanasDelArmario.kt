@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.orlo.app.R
 import com.orlo.app.data.model.CategoriaPrenda
@@ -33,6 +34,7 @@ import com.orlo.app.data.model.PerfilUi
 import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.model.coloresDePrenda
 import com.orlo.app.ui.screens.result.components.TarjetaDeEstilo
+import com.orlo.app.ui.theme.OrloTheme
 import com.orlo.app.ui.utils.AppButton
 import com.orlo.app.ui.utils.AppOutlinedButton
 import com.orlo.app.ui.utils.EmptyMessage
@@ -105,6 +107,9 @@ fun PestanaOutfits(
     nombresDePrendas: (OutfitUi) -> List<String>,
     onOutfit: (OutfitUi) -> Unit,
     onFavorito: (OutfitUi) -> Unit,
+    outfitConMenu: String?,
+    onAbrirMenu: (OutfitUi) -> Unit,
+    onCerrarMenu: () -> Unit,
     onDuplicar: (OutfitUi) -> Unit,
     onBorrar: (OutfitUi) -> Unit,
     modifier: Modifier = Modifier,
@@ -123,6 +128,9 @@ fun PestanaOutfits(
                 prendas = nombresDePrendas(outfit),
                 onClick = { onOutfit(outfit) },
                 onFavorito = { onFavorito(outfit) },
+                menuAbierto = outfitConMenu == outfit.id,
+                onAbrirMenu = { onAbrirMenu(outfit) },
+                onCerrarMenu = onCerrarMenu,
                 onDuplicar = { onDuplicar(outfit) },
                 onBorrar = { onBorrar(outfit) },
             )
@@ -205,8 +213,15 @@ fun PestanaHistorial(
     }
 }
 
+// Una fila del historial: si tiene a donde ir, la tarjeta se puede tocar
 @Composable
-private fun ElementoDeHistorial(titulo: String, detalle: String, fecha: Long, onClick: (() -> Unit)?) {
+fun ElementoDeHistorial(
+    titulo: String,
+    detalle: String,
+    fecha: Long,
+    onClick: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
     val colores = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     val contenido: @Composable () -> Unit = {
         Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -215,8 +230,16 @@ private fun ElementoDeHistorial(titulo: String, detalle: String, fecha: Long, on
         }
     }
     if (onClick != null) {
-        Card(onClick = onClick, colors = colores, modifier = Modifier.fillMaxWidth()) { contenido() }
+        Card(onClick = onClick, colors = colores, modifier = modifier.fillMaxWidth()) { contenido() }
     } else {
-        Card(colors = colores, modifier = Modifier.fillMaxWidth()) { contenido() }
+        Card(colors = colores, modifier = modifier.fillMaxWidth()) { contenido() }
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun ElementoDeHistorialPreview() {
+    OrloTheme {
+        ElementoDeHistorial(titulo = "Outfit", detalle = "Lunes de clase", fecha = 1_760_000_000_000L, onClick = {})
     }
 }
