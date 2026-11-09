@@ -32,8 +32,10 @@ data class ActualizarPerfilDto(
 
 // Copia del estilo que se muestra en la app (desnormalizacion): asi el resultado se ve aunque el
 // backend cambie despues la descripcion del estilo
+// En Firestore los ids del contenido del backend van como numero, igual que los escriben la web y
+// el seed; en la app se manejan como texto
 data class EstiloFirestoreDto(
-    val id: String = "",
+    val id: Long = 0,
     val code: String = "",
     val name: String = "",
     val description: String = "",
@@ -68,7 +70,7 @@ data class UsuarioFirestoreDto(
 )
 
 fun EstiloUi.toEstiloFirestoreDto(): EstiloFirestoreDto = EstiloFirestoreDto(
-    id = id,
+    id = id.toLongOrNull() ?: 0,
     code = code,
     name = nombre,
     description = descripcion,
@@ -77,7 +79,7 @@ fun EstiloUi.toEstiloFirestoreDto(): EstiloFirestoreDto = EstiloFirestoreDto(
 )
 
 fun EstiloFirestoreDto.toEstiloUi(): EstiloUi = EstiloUi(
-    id = id,
+    id = if (id == 0L) "" else id.toString(),
     code = code,
     nombre = name,
     descripcion = description,
@@ -132,7 +134,7 @@ fun PerfilUi.toActualizarPerfilDto(): ActualizarPerfilDto = ActualizarPerfilDto(
 
 // El id del documento es el id de la leccion: una sola entrada de avance por leccion
 data class ProgresoLeccionFirestoreDto(
-    val lessonId: String = "",
+    val lessonId: Long = 0,
     val status: String = "",
     val updatedAt: Long = 0,
 )

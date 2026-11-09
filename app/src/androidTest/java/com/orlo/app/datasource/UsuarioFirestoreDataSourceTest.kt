@@ -51,8 +51,8 @@ class UsuarioFirestoreDataSourceTest {
     fun guardarResultado_resultadoNuevo_quedaEnHistorialYComoActual() = runTest {
         //Arrange
         val resultado = ResultadoFirestoreDto(
-            primary = EstiloFirestoreDto(id = "e1", code = "urbano", name = "Urbano"),
-            secondary = EstiloFirestoreDto(id = "e2", code = "creativo", name = "Creativo"),
+            primary = EstiloFirestoreDto(id = 1, code = "urbano", name = "Urbano"),
+            secondary = EstiloFirestoreDto(id = 2, code = "creativo", name = "Creativo"),
             createdAt = 100,
         )
         //Act
@@ -67,8 +67,8 @@ class UsuarioFirestoreDataSourceTest {
     @Test
     fun guardarProgresoLeccion_dosVecesLaMismaLeccion_quedaUnSoloAvance() = runTest {
         //Act
-        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = "l3", status = "en_curso", updatedAt = 1))
-        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = "l3", status = "completada", updatedAt = 2))
+        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = 3, status = "en_curso", updatedAt = 1))
+        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = 3, status = "completada", updatedAt = 2))
         //Assert
         val progreso = dataSource.getProgresoLecciones(userId)
         assertThat(progreso).hasSize(1)
@@ -78,7 +78,7 @@ class UsuarioFirestoreDataSourceTest {
     @Test
     fun borrarDatosDelUsuario_conSubcolecciones_noQuedaNada() = runTest {
         //Arrange
-        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = "l1", status = "en_curso", updatedAt = 1))
+        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = 1, status = "en_curso", updatedAt = 1))
         dataSource.guardarResultado(userId, ResultadoFirestoreDto(primary = EstiloFirestoreDto(code = "casual")))
         //Act
         dataSource.borrarDatosDelUsuario(userId)

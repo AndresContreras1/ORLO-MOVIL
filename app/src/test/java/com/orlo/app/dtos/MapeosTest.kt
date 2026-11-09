@@ -2,24 +2,26 @@ package com.orlo.app.dtos
 
 import com.google.common.truth.Truth.assertThat
 import com.orlo.app.data.dtos.CuestionarioDto
+import com.orlo.app.data.dtos.GuardarPrendaDto
 import com.orlo.app.data.dtos.LeccionDto
 import com.orlo.app.data.dtos.OpcionDto
+import com.orlo.app.data.dtos.OutfitAsesorDto
 import com.orlo.app.data.dtos.PreguntaDto
 import com.orlo.app.data.dtos.RepasoDto
 import com.orlo.app.data.dtos.RespuestaAsesorDto
-import com.orlo.app.data.dtos.OutfitAsesorDto
 import com.orlo.app.data.dtos.UsuarioFirestoreDto
 import com.orlo.app.data.dtos.toActualizarPerfilDto
-import com.orlo.app.data.dtos.GuardarPrendaDto
-import com.orlo.app.data.dtos.toGuardarPrendaDto
-import com.orlo.app.data.model.CategoriaPrenda
-import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.dtos.toCuestionarioUi
+import com.orlo.app.data.dtos.toEstiloFirestoreDto
+import com.orlo.app.data.dtos.toEstiloUi
+import com.orlo.app.data.dtos.toGuardarPrendaDto
 import com.orlo.app.data.dtos.toLeccionUi
 import com.orlo.app.data.dtos.toPerfilUi
 import com.orlo.app.data.dtos.toRespuestaAsesorUi
+import com.orlo.app.data.model.CategoriaPrenda
 import com.orlo.app.data.model.EstiloUi
 import com.orlo.app.data.model.PerfilUi
+import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.model.ResultadoUi
 import com.orlo.app.data.model.RolMensaje
 import org.junit.Test
@@ -142,5 +144,16 @@ class MapeosTest {
         assertThat(respuesta.mensaje.outfits).hasSize(1)
         assertThat(respuesta.mensaje.preguntaSeguimiento).isNull()
         assertThat(respuesta.mensajesRestantes).isEqualTo(4)
+    }
+
+    @Test
+    fun estiloFirestore_idNumerico_vaYVuelveComoTexto() {
+        //Arrange
+        val estilo = EstiloUi(id = "12", code = "urbano", nombre = "Urbano")
+        //Act
+        val dto = estilo.toEstiloFirestoreDto()
+        //Assert
+        assertThat(dto.id).isEqualTo(12L)
+        assertThat(dto.toEstiloUi().id).isEqualTo("12")
     }
 }

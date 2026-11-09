@@ -31,7 +31,7 @@ class LeccionRepository @Inject constructor(
                 val progreso = async {
                     try {
                         usuarioRemoteDataSource.getProgresoLecciones(uid)
-                            .associate { it.lessonId to EstadoLeccion.desdeCodigo(it.status) }
+                            .associate { it.lessonId.toString() to EstadoLeccion.desdeCodigo(it.status) }
                     } catch (e: Exception) {
                         Log.d("LeccionRepository", "getLecciones (avance): ${e.message}")
                         emptyMap()
@@ -62,7 +62,7 @@ class LeccionRepository @Inject constructor(
     suspend fun getEstado(id: String): Result<EstadoLeccion> {
         return try {
             val progreso = usuarioRemoteDataSource.getProgresoLecciones(authRemoteDataSource.uidOError())
-                .firstOrNull { it.lessonId == id }
+                .firstOrNull { it.lessonId.toString() == id }
             Result.success(EstadoLeccion.desdeCodigo(progreso?.status))
         } catch (e: Exception) {
             Log.d("LeccionRepository", "getEstado: ${e.message}")
@@ -72,9 +72,11 @@ class LeccionRepository @Inject constructor(
 
     suspend fun guardarEstado(id: String, estado: EstadoLeccion, fecha: Long): Result<Unit> {
         return try {
+            // El backend numera las lecciones: en Firestore el avance guarda ese numero
+            val lessonId = id.toLongOrNull() ?: throw DatosInvalidosException()
             usuarioRemoteDataSource.guardarProgresoLeccion(
                 authRemoteDataSource.uidOError(),
-                ProgresoLeccionFirestoreDto(lessonId = id, status = estado.codigo, updatedAt = fecha)
+                ProgresoLeccionFirestoreDto(lessonId = lessonId, status = estado.codigo, updatedAt = fecha)
             )
             Result.success(Unit)
         } catch (e: Exception) {

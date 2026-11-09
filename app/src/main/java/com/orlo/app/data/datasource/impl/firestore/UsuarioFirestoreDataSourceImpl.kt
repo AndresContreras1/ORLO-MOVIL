@@ -67,7 +67,7 @@ class UsuarioFirestoreDataSourceImpl @Inject constructor(
 
     override suspend fun guardarProgresoLeccion(userId: String, progreso: ProgresoLeccionFirestoreDto): Unit {
         usuario(userId).collection(LESSON_PROGRESS)
-            .document(progreso.lessonId)
+            .document(progreso.lessonId.toString())
             .set(progreso)
             .await()
     }

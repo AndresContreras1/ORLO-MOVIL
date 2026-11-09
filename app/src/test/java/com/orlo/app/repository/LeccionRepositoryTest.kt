@@ -8,10 +8,15 @@ import com.orlo.app.data.datasource.UsuarioRemoteDataSource
 import com.orlo.app.data.dtos.LeccionResumenDto
 import com.orlo.app.data.dtos.ProgresoLeccionFirestoreDto
 import com.orlo.app.data.model.EstadoLeccion
+import com.orlo.app.data.repository.DatosInvalidosException
 import com.orlo.app.data.repository.LeccionRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -25,8 +30,8 @@ class LeccionRepositoryTest {
     private lateinit var repository: LeccionRepository
 
     private val lecciones = listOf(
-        LeccionResumenDto(id = "l2", title = "Proporciones", order = 2),
-        LeccionResumenDto(id = "l1", title = "Conoce tu cuerpo", order = 1, freeSample = true),
+        LeccionResumenDto(id = "2", title = "Proporciones", order = 2),
+        LeccionResumenDto(id = "1", title = "Conoce tu cuerpo", order = 1, freeSample = true),
     )
 
     @Before
@@ -45,11 +50,11 @@ class LeccionRepositoryTest {
         //Arrange
         coEvery { leccionDataSource.getLecciones() } returns lecciones
         coEvery { usuarioDataSource.getProgresoLecciones("user_1") } returns
-            listOf(ProgresoLeccionFirestoreDto(lessonId = "l1", status = "completada"))
+            listOf(ProgresoLeccionFirestoreDto(lessonId = 1, status = "completada"))
         //Act
         val result = repository.getLecciones().getOrThrow()
         //Assert
-        assertThat(result.map { it.id }).containsExactly("l1", "l2").inOrder()
+        assertThat(result.map { it.id }).containsExactly("1", "2").inOrder()
         assertThat(result[0].estado).isEqualTo(EstadoLeccion.COMPLETADA)
         assertThat(result[1].estado).isEqualTo(EstadoLeccion.SIN_EMPEZAR)
     }
@@ -64,5 +69,27 @@ class LeccionRepositoryTest {
         //Assert
         assertThat(result.isSuccess).isTrue()
         assertThat(result.getOrThrow().all { it.estado == EstadoLeccion.SIN_EMPEZAR }).isTrue()
+    }
+
+    @Test
+    fun guardarEstado_idDeLaLeccion_seGuardaComoNumero() = runTest {
+        //Arrange
+        val progreso = slot<ProgresoLeccionFirestoreDto>()
+        coEvery { usuarioDataSource.guardarProgresoLeccion("user_1", capture(progreso)) } just runs
+        //Act
+        val result = repository.guardarEstado("7", EstadoLeccion.COMPLETADA, fecha = 10)
+        //Assert
+        assertThat(result.isSuccess).isTrue()
+        assertThat(progreso.captured.lessonId).isEqualTo(7L)
+        assertThat(progreso.captured.status).isEqualTo("completada")
+    }
+
+    @Test
+    fun guardarEstado_idQueNoEsNumero_datosInvalidosYNoEscribe() = runTest {
+        //Act
+        val result = repository.guardarEstado("abc", EstadoLeccion.EN_CURSO, fecha = 10)
+        //Assert
+        assertThat(result.exceptionOrNull()).isInstanceOf(DatosInvalidosException::class.java)
+        coVerify(exactly = 0) { usuarioDataSource.guardarProgresoLeccion(any(), any()) }
     }
 }
