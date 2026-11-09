@@ -5,6 +5,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import com.orlo.app.EmuladorDePrueba
 import com.orlo.app.data.datasource.impl.firestore.UsuarioFirestoreDataSourceImpl
+import com.orlo.app.data.dtos.ActualizarPerfilDto
 import com.orlo.app.data.dtos.EstiloFirestoreDto
 import com.orlo.app.data.dtos.ProgresoLeccionFirestoreDto
 import com.orlo.app.data.dtos.RegistrarUsuarioDto
@@ -50,8 +51,8 @@ class UsuarioFirestoreDataSourceTest {
     fun guardarResultado_resultadoNuevo_quedaEnHistorialYComoActual() = runTest {
         //Arrange
         val resultado = ResultadoFirestoreDto(
-            primary = EstiloFirestoreDto(id = 1, code = "urbano", name = "Urbano"),
-            secondary = EstiloFirestoreDto(id = 2, code = "creativo", name = "Creativo"),
+            primary = EstiloFirestoreDto(id = "e1", code = "urbano", name = "Urbano"),
+            secondary = EstiloFirestoreDto(id = "e2", code = "creativo", name = "Creativo"),
             createdAt = 100,
         )
         //Act
@@ -66,8 +67,8 @@ class UsuarioFirestoreDataSourceTest {
     @Test
     fun guardarProgresoLeccion_dosVecesLaMismaLeccion_quedaUnSoloAvance() = runTest {
         //Act
-        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = 3, status = "en_curso", updatedAt = 1))
-        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = 3, status = "completada", updatedAt = 2))
+        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = "l3", status = "en_curso", updatedAt = 1))
+        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = "l3", status = "completada", updatedAt = 2))
         //Assert
         val progreso = dataSource.getProgresoLecciones(userId)
         assertThat(progreso).hasSize(1)
@@ -77,7 +78,7 @@ class UsuarioFirestoreDataSourceTest {
     @Test
     fun borrarDatosDelUsuario_conSubcolecciones_noQuedaNada() = runTest {
         //Arrange
-        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = 1, status = "en_curso", updatedAt = 1))
+        dataSource.guardarProgresoLeccion(userId, ProgresoLeccionFirestoreDto(lessonId = "l1", status = "en_curso", updatedAt = 1))
         dataSource.guardarResultado(userId, ResultadoFirestoreDto(primary = EstiloFirestoreDto(code = "casual")))
         //Act
         dataSource.borrarDatosDelUsuario(userId)
@@ -85,5 +86,18 @@ class UsuarioFirestoreDataSourceTest {
         assertThat(dataSource.getUsuario(userId)).isNull()
         assertThat(dataSource.getResultados(userId)).isEmpty()
         assertThat(dataSource.getProgresoLecciones(userId)).isEmpty()
+    }
+
+    @Test
+    fun actualizarPerfil_conDatos_seMezclaSinBorrarElResultado() = runTest {
+        //Arrange
+        dataSource.guardarResultado(userId, ResultadoFirestoreDto(primary = EstiloFirestoreDto(code = "urbano", name = "Urbano")))
+        //Act
+        dataSource.actualizarPerfil(userId, ActualizarPerfilDto(name = "Laura Gómez", climate = "calido", occasions = listOf("universidad")))
+        //Assert
+        val usuario = dataSource.getUsuario(userId)
+        assertThat(usuario?.name).isEqualTo("Laura Gómez")
+        assertThat(usuario?.occasions).containsExactly("universidad")
+        assertThat(usuario?.currentResult?.primary?.code).isEqualTo("urbano")
     }
 }

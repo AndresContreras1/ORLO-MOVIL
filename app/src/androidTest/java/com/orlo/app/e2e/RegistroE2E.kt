@@ -24,7 +24,7 @@ import org.junit.Rule
 import org.junit.Test
 
 // El caso de uso completo del registro, desde la bienvenida hasta el cuestionario, contra el emulador
-// de Firebase
+// de Firebase y el backend local
 @HiltAndroidTest
 class RegistroE2E {
 
@@ -49,8 +49,8 @@ class RegistroE2E {
         EmuladorDePrueba.borrarUsuarioActual()
     }
 
-    private fun esperar(tag: String) {
-        composeRule.waitUntil(timeoutMillis = 10_000) {
+    private fun esperar(tag: String, timeoutMillis: Long = 10_000) {
+        composeRule.waitUntil(timeoutMillis = timeoutMillis) {
             composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
         }
     }
@@ -86,11 +86,9 @@ class RegistroE2E {
         composeRule.onNodeWithTag("btnRegister").performScrollTo().performClick()
         esperar("profileSetupScreen")
         composeRule.onNodeWithTag("btnGuardarPerfil").performScrollTo().performClick()
-        //Assert: el cuestionario se carga del backend; si no esta corriendo se ve el error con reintentar
-        composeRule.waitUntil(timeoutMillis = 15_000) {
-            composeRule.onAllNodesWithTag("quizScreen").fetchSemanticsNodes().isNotEmpty() ||
-                composeRule.onAllNodesWithTag("btnRetry").fetchSemanticsNodes().isNotEmpty()
-        }
+        //Assert: el cuestionario lo sirve el backend, que tiene que estar corriendo para esta prueba
+        esperar("quizScreen", timeoutMillis = 20_000)
+        composeRule.onNodeWithTag("quizScreen").assertIsDisplayed()
         val uid = Firebase.auth.currentUser?.uid
         assertThat(uid).isNotNull()
         val usuario = runBlocking { UsuarioFirestoreDataSourceImpl(Firebase.firestore).getUsuario(uid!!) }
