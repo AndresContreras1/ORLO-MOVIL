@@ -6,9 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -111,8 +111,7 @@ fun CirculoDeColor(
     }
 }
 
-// Una fila de circulos que salta de linea cuando no caben
-@OptIn(ExperimentalLayoutApi::class)
+// Una fila de circulos que se desliza de lado cuando no caben
 @Composable
 fun SelectorDeColor(
     opciones: List<Triple<String, String, String>>,
@@ -120,13 +119,12 @@ fun SelectorDeColor(
     onSeleccion: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    FlowRow(
+    LazyRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         // Cada opcion es codigo, color y etiqueta. Tocar la elegida la quita
-        opciones.forEach { (codigo, hex, etiqueta) ->
+        items(opciones, key = { it.first }) { (codigo, hex, etiqueta) ->
             CirculoDeColor(
                 hex = hex,
                 etiqueta = etiqueta,

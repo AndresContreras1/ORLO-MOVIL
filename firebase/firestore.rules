@@ -1,0 +1,59 @@
+rules_version = '2';
+
+// Cada usuario solo lee y escribe su propio documento y sus subcolecciones. Nadie puede leer los
+// datos de otro usuario. El contenido de la app (estilos, lecciones, cuestionario) no esta en
+// Firestore: lo sirve el backend
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function esElDueno(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read, delete: if esElDueno(userId);
+      // El nombre es obligatorio y corto; nunca se guarda correo ni contrasena
+      allow create, update: if esElDueno(userId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 40
+        && !('email' in request.resource.data)
+        && !('password' in request.resource.data);
+
+      match /results/{resultId} {
+        allow read, write: if esElDueno(userId);
+      }
+
+      match /lessonProgress/{lessonId} {
+        allow read, delete: if esElDueno(userId);
+        allow create, update: if esElDueno(userId)
+          && request.resource.data.status in ['sin_empezar', 'en_curso', 'completada'];
+      }
+
+      match /garments/{garmentId} {
+        allow read, delete: if esElDueno(userId);
+        allow create, update: if esElDueno(userId)
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 40
+          && request.resource.data.category in ['arriba', 'abajo', 'abrigo', 'calzado', 'accesorio', 'otro'];
+      }
+
+      match /outfits/{outfitId} {
+        allow read, delete: if esElDueno(userId);
+        allow create, update: if esElDueno(userId)
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 40
+          && request.resource.data.favorite is bool;
+      }
+
+      match /conversations/{conversationId} {
+        allow read, write: if esElDueno(userId);
+
+        match /messages/{messageId} {
+          allow read, delete: if esElDueno(userId);
+          allow create: if esElDueno(userId)
+            && request.resource.data.role in ['user', 'assistant'];
+        }
+      }
+    }
+  }
+}
