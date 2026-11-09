@@ -75,5 +75,6 @@ Integración de los data sources contra el emulador de Firebase y prueba e2e del
 - `ImagenLocalDataSource`: comprime las fotos (prendas y perfil) antes de subirlas y las endereza según el EXIF de la cámara.
 - Fotos desde la cámara con `TakePicture` y un `FileProvider` (`res/xml/rutas_de_fotos.xml`), o desde la galería y los archivos con `GetContent`. Ninguna de las dos pide permisos.
 - Notificaciones con Firebase Cloud Messaging: la app se suscribe al tema `lecciones` y `OrloMessagingService` muestra el aviso; tocarlo abre la lección. Desde Android 13 se pide el permiso al llegar al inicio. Con el proyecto `demo-orlo` no llegan avisos reales: hace falta un proyecto de Firebase real.
+- Coil manda un User-Agent propio (`ORLO/<versión> (Android)`): Wikimedia, de donde salen las fotos del catálogo de Explora, rechaza las descargas sin él.
 - `EmuladorFirebase`: en debug, las URLs de las fotos se guardan con `127.0.0.1` (como las ve la web) y Coil las pide a `10.0.2.2`.
 - El cobro de la suscripción todavía no está conectado a Google Play: el acceso premium se activa desde el panel.

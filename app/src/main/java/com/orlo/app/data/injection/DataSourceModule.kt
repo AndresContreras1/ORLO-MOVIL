@@ -5,15 +5,23 @@ import com.orlo.app.data.datasource.AsesorRemoteDataSource
 import com.orlo.app.data.datasource.ConversacionRemoteDataSource
 import com.orlo.app.data.datasource.CuentaRemoteDataSource
 import com.orlo.app.data.datasource.CuestionarioRemoteDataSource
+import com.orlo.app.data.datasource.ExploraRemoteDataSource
+import com.orlo.app.data.datasource.GuardadoRemoteDataSource
 import com.orlo.app.data.datasource.LeccionRemoteDataSource
+import com.orlo.app.data.datasource.OutfitDelDiaRemoteDataSource
+import com.orlo.app.data.datasource.TiendaRemoteDataSource
 import com.orlo.app.data.datasource.UsuarioRemoteDataSource
 import com.orlo.app.data.datasource.impl.firestore.ArmarioFirestoreDataSourceImpl
 import com.orlo.app.data.datasource.impl.firestore.ConversacionFirestoreDataSourceImpl
+import com.orlo.app.data.datasource.impl.firestore.GuardadoFirestoreDataSourceImpl
+import com.orlo.app.data.datasource.impl.firestore.OutfitDelDiaFirestoreDataSourceImpl
 import com.orlo.app.data.datasource.impl.firestore.UsuarioFirestoreDataSourceImpl
 import com.orlo.app.data.datasource.impl.retrofit.AsesorRetrofitDataSourceImpl
 import com.orlo.app.data.datasource.impl.retrofit.CuentaRetrofitDataSourceImpl
 import com.orlo.app.data.datasource.impl.retrofit.CuestionarioRetrofitDataSourceImpl
+import com.orlo.app.data.datasource.impl.retrofit.ExploraRetrofitDataSourceImpl
 import com.orlo.app.data.datasource.impl.retrofit.LeccionRetrofitDataSourceImpl
+import com.orlo.app.data.datasource.impl.retrofit.TiendaRetrofitDataSourceImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -49,4 +57,16 @@ abstract class DataSourceModule {
 
     @Binds
     abstract fun bindCuentaRemoteDataSource(impl: CuentaRetrofitDataSourceImpl): CuentaRemoteDataSource
+
+    @Binds
+    abstract fun bindExploraRemoteDataSource(impl: ExploraRetrofitDataSourceImpl): ExploraRemoteDataSource
+
+    @Binds
+    abstract fun bindTiendaRemoteDataSource(impl: TiendaRetrofitDataSourceImpl): TiendaRemoteDataSource
+
+    @Binds
+    abstract fun bindGuardadoRemoteDataSource(impl: GuardadoFirestoreDataSourceImpl): GuardadoRemoteDataSource
+
+    @Binds
+    abstract fun bindOutfitDelDiaRemoteDataSource(impl: OutfitDelDiaFirestoreDataSourceImpl): OutfitDelDiaRemoteDataSource
 }

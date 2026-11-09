@@ -1,7 +1,10 @@
 package com.orlo.app.data.dtos
 
 import com.orlo.app.data.model.MensajeChatUi
+import com.orlo.app.data.model.OpcionesDelPerfil
 import com.orlo.app.data.model.OutfitPropuestoUi
+import com.orlo.app.data.model.PerfilUi
+import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.model.RespuestaAsesorUi
 import com.orlo.app.data.model.RolMensaje
 
@@ -70,4 +73,26 @@ fun RespuestaAsesorDto.toRespuestaAsesorUi(fecha: Long): RespuestaAsesorUi = Res
         fecha = fecha,
     ),
     mensajesRestantes = remainingMessages ?: 0,
+)
+
+// Lo que el asesor sabe del usuario, en palabras: el primer nombre y las preferencias. Nada de
+// correo, apellidos ni identificadores. Lo usan el chat y el outfit del dia
+fun PerfilUi.toPerfilAsesorDto(): PerfilAsesorDto = PerfilAsesorDto(
+    name = nombre.trim().split(" ").firstOrNull().orEmpty(),
+    ageRange = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.rangosDeEdad, rangoEdad),
+    garmentPronoun = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.tratoPrendas, tratoPrendas),
+    primaryStyle = resultadoActual?.principal?.nombre,
+    secondaryStyle = resultadoActual?.secundario?.nombre,
+    skinTone = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.tonosDePiel, tonoPiel),
+    hairColor = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.coloresDeCabello, colorCabello),
+    eyeColor = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.coloresDeOjos, colorOjos),
+    climate = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.climas, clima),
+    budget = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.presupuestos, presupuesto),
+    occasions = ocasiones.mapNotNull { OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.ocasiones, it) },
+)
+
+fun PrendaUi.toPrendaAsesorDto(): PrendaAsesorDto = PrendaAsesorDto(
+    name = nombre.ifBlank { categoria.paraAsesor },
+    category = categoria.paraAsesor,
+    color = color,
 )

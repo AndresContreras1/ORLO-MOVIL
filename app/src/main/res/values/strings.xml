@@ -212,11 +212,6 @@
 
     <!-- Explora -->
     <string name="explora_titulo">Explora</string>
-    <string name="explora_proximamente">Muy pronto vas a encontrar aquí:</string>
-    <string name="explora_para_tu_estilo">Prendas y combinaciones para tu estilo</string>
-    <string name="explora_completa_armario">Qué prendas le darían más combinaciones a tu armario</string>
-    <string name="explora_tendencias">Tendencias, siempre como opción</string>
-    <string name="explora_complementos">Accesorios, zapatos y capas para tus outfits</string>
     <string name="ir_a_mi_armario">Ir a Mi armario</string>
 
     <!-- Mi armario -->
@@ -382,4 +377,40 @@
     <string name="resumen_armario">%1$d prendas · %2$d outfits</string>
     <string name="sin_favoritas">Todavía no marcas prendas favoritas. Toca el corazón de una prenda.</string>
     <string name="sin_outfits_favoritos">Todavía no marcas outfits favoritos.</string>
+    <!-- Explora -->
+    <string name="explora_subtitulo">Ideas para tu estilo y para sacarle más a lo que ya tienes</string>
+    <string name="pestana_para_tu_estilo">Para tu estilo</string>
+    <string name="pestana_completa_armario">Completa tu armario</string>
+    <string name="pestana_tendencias">Tendencias</string>
+    <string name="pestana_complementos">Complementos</string>
+    <string name="pestana_guardados">Guardados</string>
+    <string name="explora_tendencias_aviso">Las tendencias son una opción, no una regla: elige las que van contigo.</string>
+    <string name="explora_completa_aviso">Lo que le daría más combinaciones a lo que ya tienes en Mi armario.</string>
+    <string name="explora_sin_items">Todavía no hay prendas en esta sección.</string>
+    <string name="explora_armario_completo">Tu armario ya tiene de todo: no encontramos tipos de prenda que le falten.</string>
+    <string name="explora_sin_guardados">Guarda prendas con el marcador para verlas aquí.</string>
+    <string name="explora_sin_prendas_armario">Mientras más prendas tengas en Mi armario, mejores serán estas ideas.</string>
+    <string name="error_cargar_explora">No pudimos cargar Explora.</string>
+    <string name="error_guardar_item">No pudimos guardar la prenda.</string>
+    <string name="guardar_para_despues">Guardar</string>
+    <string name="quitar_de_guardados">Quitar de guardados</string>
+    <string name="guardado">Guardado</string>
+    <string name="por_que_te_queda">Por qué va contigo</string>
+    <string name="como_combinarla">Cómo combinarla</string>
+    <string name="donde_encontrarla">Dónde encontrarla</string>
+    <string name="sin_tiendas">No hay tiendas sugeridas por ahora.</string>
+    <string name="tienda_afiliada">Tienda aliada</string>
+    <string name="abrir_tienda">Abrir la tienda %1$s</string>
+    <string name="foto_de">Foto: %1$s</string>
+    <string name="tendencia">Tendencia</string>
+    <string name="contexto_casual">Casual</string>
+    <string name="contexto_universidad">Universidad</string>
+    <string name="contexto_elegante">Elegante</string>
+    <!-- Outfit del día -->
+    <string name="outfit_del_dia">Tu outfit de hoy</string>
+    <string name="outfit_del_dia_texto">El asesor arma una propuesta con lo que tienes en tu armario.</string>
+    <string name="pedir_outfit_del_dia">Ver mi outfit de hoy</string>
+    <string name="otra_opcion_outfit">Otra opción</string>
+    <string name="armando_outfit">Armando tu outfit…</string>
+    <string name="error_outfit_del_dia">No pudimos armar el outfit de hoy.</string>
 </resources>

@@ -34,10 +34,14 @@ class BaseApplication : Application(), ImageLoaderFactory {
         }
     }
 
-    // El cargador de imagenes de Coil para toda la app. En debug las fotos del emulador de Storage
+    // El cargador de imagenes de Coil para toda la app. Las fotos del catalogo vienen de Wikimedia,
+    // que rechaza las descargas sin un User-Agent propio. En debug las fotos del emulador de Storage
     // se piden al computador (ver EmuladorFirebase)
     override fun newImageLoader(): ImageLoader {
         val cliente = OkHttpClient.Builder().apply {
+            addInterceptor { chain ->
+                chain.proceed(chain.request().newBuilder().header("User-Agent", "ORLO/${BuildConfig.VERSION_NAME} (Android)").build())
+            }
             if (BuildConfig.DEBUG) addInterceptor(EmuladorFirebase.interceptorDeFotos)
         }.build()
         return ImageLoader.Builder(this)
