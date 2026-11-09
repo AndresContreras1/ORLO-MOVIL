@@ -8,6 +8,8 @@ const val LESSON_PROGRESS = "lessonProgress"
 const val GARMENTS = "garments"
 const val OUTFITS = "outfits"
 const val CONVERSATIONS = "conversations"
+const val SAVED = "saved"
+const val DAILY_OUTFITS = "dailyOutfits"
 const val MESSAGES = "messages"
 
 // Un batch de Firestore admite hasta 500 operaciones

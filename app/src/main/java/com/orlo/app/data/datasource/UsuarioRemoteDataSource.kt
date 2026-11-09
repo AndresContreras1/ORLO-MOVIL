@@ -5,6 +5,7 @@ import com.orlo.app.data.dtos.ProgresoLeccionFirestoreDto
 import com.orlo.app.data.dtos.RegistrarUsuarioDto
 import com.orlo.app.data.dtos.ResultadoFirestoreDto
 import com.orlo.app.data.dtos.UsuarioFirestoreDto
+import kotlinx.coroutines.flow.Flow
 
 // Contrato de los datos del usuario: perfil, resultados del cuestionario y avance en Aprende.
 // Retorna DTOs; null cuando el documento no existe
@@ -13,6 +14,9 @@ interface UsuarioRemoteDataSource {
     suspend fun registrarUsuario(userId: String, usuario: RegistrarUsuarioDto): Unit
 
     suspend fun getUsuario(userId: String): UsuarioFirestoreDto?
+    // En vivo: cada cambio del documento (perfil, foto, contador de prendas) llega solo
+    fun observarUsuario(userId: String): Flow<UsuarioFirestoreDto?>
+    suspend fun actualizarFoto(userId: String, photoUrl: String): Unit
 
     suspend fun actualizarPerfil(userId: String, perfil: ActualizarPerfilDto): Unit
 
@@ -22,6 +26,7 @@ interface UsuarioRemoteDataSource {
     suspend fun getResultados(userId: String): List<ResultadoFirestoreDto>
 
     suspend fun getProgresoLecciones(userId: String): List<ProgresoLeccionFirestoreDto>
+    fun observarProgresoLecciones(userId: String): Flow<List<ProgresoLeccionFirestoreDto>>
 
     suspend fun guardarProgresoLeccion(userId: String, progreso: ProgresoLeccionFirestoreDto): Unit
 

@@ -24,9 +24,11 @@ import com.orlo.app.data.model.PerfilUi
 import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.model.RespuestaAsesorUi
 import com.orlo.app.data.model.RolMensaje
+import javax.inject.Inject
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 // La conversacion en la que quedo el mensaje y la respuesta del asesor
 data class ResultadoPregunta(
@@ -107,6 +109,11 @@ class AsesorRepository @Inject constructor(
             Result.failure(errorDe(e))
         }
     }
+
+    fun observarConversaciones(): Flow<Result<List<ConversacionUi>>> =
+        authRemoteDataSource.enVivo("AsesorRepository") { uid ->
+            conversacionRemoteDataSource.observarConversaciones(uid).map { lista -> lista.map { it.toConversacionUi() } }
+        }
 
     suspend fun getMensajes(conversacionId: String): Result<List<MensajeChatUi>> {
         return try {

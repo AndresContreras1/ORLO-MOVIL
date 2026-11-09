@@ -10,8 +10,11 @@ import com.orlo.app.data.dtos.ProgresoLeccionFirestoreDto
 import com.orlo.app.data.dtos.RegistrarUsuarioDto
 import com.orlo.app.data.dtos.ResultadoFirestoreDto
 import com.orlo.app.data.dtos.UsuarioFirestoreDto
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 
 class UsuarioFirestoreDataSourceImpl @Inject constructor(
     private val db: FirebaseFirestore
@@ -28,6 +31,23 @@ class UsuarioFirestoreDataSourceImpl @Inject constructor(
         val respuesta = usuario(userId).get().await()
         val usuario = respuesta.toObject(UsuarioFirestoreDto::class.java) ?: return null
         return usuario.copy(id = respuesta.id)
+    }
+
+    // El listener vive mientras alguien recolecte el flujo; al cancelarlo, awaitClose lo quita
+    override fun observarUsuario(userId: String): Flow<UsuarioFirestoreDto?> = callbackFlow {
+        val listener = usuario(userId).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
+            trySend(snapshot?.toObject(UsuarioFirestoreDto::class.java)?.copy(id = snapshot.id))
+        }
+        awaitClose { listener.remove() }
+    }
+
+    // update y no set: solo cambia la foto, el resto del documento queda igual
+    override suspend fun actualizarFoto(userId: String, photoUrl: String): Unit {
+        usuario(userId).update(mapOf("photoUrl" to photoUrl)).await()
     }
 
     // merge y no update: si el usuario se registro y el documento no alcanzo a crearse, el perfil
@@ -65,6 +85,17 @@ class UsuarioFirestoreDataSourceImpl @Inject constructor(
         return respuesta.documents.mapNotNull { it.toObject(ProgresoLeccionFirestoreDto::class.java) }
     }
 
+    override fun observarProgresoLecciones(userId: String): Flow<List<ProgresoLeccionFirestoreDto>> = callbackFlow {
+        val listener = usuario(userId).collection(LESSON_PROGRESS).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
+            trySend(snapshot?.documents?.mapNotNull { it.toObject(ProgresoLeccionFirestoreDto::class.java) }.orEmpty())
+        }
+        awaitClose { listener.remove() }
+    }
+
     override suspend fun guardarProgresoLeccion(userId: String, progreso: ProgresoLeccionFirestoreDto): Unit {
         usuario(userId).collection(LESSON_PROGRESS)
             .document(progreso.lessonId.toString())
@@ -82,7 +113,7 @@ class UsuarioFirestoreDataSourceImpl @Inject constructor(
             borrarEnLotes(conversacion.reference.collection(MESSAGES).get().await().documents.map { it.reference })
         }
 
-        listOf(RESULTS, LESSON_PROGRESS, GARMENTS, OUTFITS, CONVERSATIONS).forEach { nombre ->
+        listOf(RESULTS, LESSON_PROGRESS, GARMENTS, OUTFITS, CONVERSATIONS, SAVED, DAILY_OUTFITS).forEach { nombre ->
             borrarEnLotes(usuarioRef.collection(nombre).get().await().documents.map { it.reference })
         }
 

@@ -13,7 +13,11 @@ import com.orlo.app.ui.navigation.NavigationLogic
 
 // El unico Scaffold de la app: la barra de abajo solo aparece en las cinco secciones principales
 @Composable
-fun OrloApp(modifier: Modifier = Modifier) {
+fun OrloApp(
+    leccionPendiente: String?,
+    onLeccionAbierta: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val navController = rememberNavController()
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
@@ -29,6 +33,8 @@ fun OrloApp(modifier: Modifier = Modifier) {
     ) {
         AppNavigation(
             navController = navController,
+            leccionPendiente = leccionPendiente,
+            onLeccionAbierta = onLeccionAbierta,
             modifier = Modifier.padding(it)
         )
     }

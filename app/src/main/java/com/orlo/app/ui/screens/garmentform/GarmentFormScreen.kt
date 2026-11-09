@@ -45,7 +45,7 @@ import com.orlo.app.ui.utils.ErrorBox
 import com.orlo.app.ui.utils.ErrorMessage
 import com.orlo.app.ui.utils.LoadingBox
 import com.orlo.app.ui.utils.OrloAsyncImage
-import com.orlo.app.ui.utils.PickImageButton
+import com.orlo.app.ui.utils.SelectorDeFoto
 import com.orlo.app.ui.utils.SelectorDeChips
 import com.orlo.app.ui.utils.SelectorDeColor
 import com.orlo.app.ui.utils.colorDeHex
@@ -168,10 +168,7 @@ fun GarmentFormScreenContent(
                 )
             }
         }
-        PickImageButton(
-            texto = stringResource(if (foto == null) R.string.subir_foto else R.string.cambiar_foto),
-            onImagePicked = onFoto,
-        )
+        SelectorDeFoto(onFoto = onFoto)
 
         if (state.esNueva) {
             Text(text = stringResource(R.string.o_elige_rapido), style = MaterialTheme.typography.titleMedium)

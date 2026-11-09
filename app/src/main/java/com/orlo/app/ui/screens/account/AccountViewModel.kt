@@ -1,5 +1,6 @@
 package com.orlo.app.ui.screens.account
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,8 +13,7 @@ import com.orlo.app.ui.utils.mensajeDeError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// Mi cuenta: el perfil llega en vivo (la foto nueva y el contador de prendas aparecen solos) y la
+// suscripcion se pide al backend cada vez que se entra
 @HiltViewModel
 class AccountViewModel @Inject constructor(
     private val authRepository: AuthRepository,
@@ -32,41 +34,61 @@ class AccountViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AccountState())
     val uiState: StateFlow<AccountState> = _uiState.asStateFlow()
 
-    // Se llama al entrar y al volver de editar los datos (LaunchedEffect): el nombre pudo cambiar.
-    // El perfil y la cuenta son independientes: se piden al tiempo
+    private var observacion: Job? = null
+
     fun cargar() {
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update {
-                it.copy(isLoading = it.nombre.isBlank(), errorCargaRes = null, correo = authRepository.correo)
-            }
-            coroutineScope {
-                val perfil = async { usuarioRepository.getPerfil() }
-                val cuenta = async { cuentaRepository.getCuenta() }
-                val perfilResult = perfil.await()
-                val cuentaResult = cuenta.await()
-
-                if (perfilResult.isSuccess) {
+            val cuenta = cuentaRepository.getCuenta()
+            _uiState.update { it.copy(cuenta = cuenta.getOrNull() ?: it.cuenta) }
+        }
+        if (observacion?.isActive == true && _uiState.value.errorCargaRes == null) return
+        observacion?.cancel()
+        _uiState.update { it.copy(isLoading = it.nombre.isBlank(), errorCargaRes = null, correo = authRepository.correo) }
+        observacion = viewModelScope.launch(ioDispatcher) {
+            usuarioRepository.observarPerfil().collect { result ->
+                val perfil = result.getOrNull()
+                if (perfil != null) {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            nombre = perfilResult.getOrThrow().nombre,
-                            cuenta = cuentaResult.getOrNull(),
+                            nombre = perfil.nombre,
+                            fotoUrl = perfil.fotoUrl,
+                            cantidadPrendas = perfil.cantidadPrendas,
                         )
                     }
                 } else {
-                    Log.d("AccountViewModel", perfilResult.exceptionOrNull()?.message.toString())
+                    Log.d("AccountViewModel", result.exceptionOrNull()?.message.toString())
                     _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorCargaRes = mensajeDeError(perfilResult.exceptionOrNull(), R.string.error_cargar_cuenta),
-                        )
+                        it.copy(isLoading = false, errorCargaRes = mensajeDeError(result.exceptionOrNull(), R.string.error_cargar_cuenta))
                     }
                 }
             }
         }
     }
 
+    // La foto nueva aparece sola cuando Firestore avisa que el perfil cambio
+    fun cambiarFoto(foto: Uri) {
+        if (_uiState.value.subiendoFoto) return
+        _uiState.update { it.copy(subiendoFoto = true, errorMessageRes = null) }
+        viewModelScope.launch(ioDispatcher) {
+            val result = usuarioRepository.cambiarFoto(foto, System.currentTimeMillis())
+            if (result.isSuccess) {
+                _uiState.update { it.copy(subiendoFoto = false, avisoRes = R.string.foto_actualizada) }
+            } else {
+                Log.d("AccountViewModel", result.exceptionOrNull()?.message.toString())
+                _uiState.update {
+                    it.copy(subiendoFoto = false, errorMessageRes = mensajeDeError(result.exceptionOrNull(), R.string.error_cambiar_foto))
+                }
+            }
+        }
+    }
+
+    fun avisoMostrado() {
+        _uiState.update { it.copy(avisoRes = null) }
+    }
+
     fun cerrarSesion() {
+        observacion?.cancel()
         authRepository.signOut()
         _uiState.update { it.copy(salir = true) }
     }
@@ -79,9 +101,11 @@ class AccountViewModel @Inject constructor(
         _uiState.update { it.copy(confirmarBorrado = false) }
     }
 
-    // Borra todo: datos, fotos y la cuenta. No se puede deshacer, por eso se confirma antes
+    // Borra todo: datos, fotos y la cuenta. No se puede deshacer, por eso se confirma antes. Se deja
+    // de escuchar el perfil antes de borrarlo
     fun borrarCuenta() {
         if (_uiState.value.borrando) return
+        observacion?.cancel()
         _uiState.update { it.copy(confirmarBorrado = false, borrando = true, errorMessageRes = null) }
         viewModelScope.launch(ioDispatcher) {
             val result = cuentaRepository.eliminarCuenta()

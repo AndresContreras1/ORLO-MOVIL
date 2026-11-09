@@ -273,8 +273,6 @@
     <string name="nueva_prenda">Nueva prenda</string>
     <string name="editar_prenda">Editar prenda</string>
     <string name="sin_foto">Sin foto</string>
-    <string name="subir_foto">Subir una foto</string>
-    <string name="cambiar_foto">Cambiar la foto</string>
     <string name="o_elige_rapido">O elige rápido, sin foto</string>
     <string name="nombre_opcional">Nombre (opcional)</string>
     <string name="categoria">Categoría</string>
@@ -369,4 +367,19 @@
     <string name="error_guardar_prenda">No pudimos guardar la prenda.</string>
     <string name="error_borrar_prenda">No pudimos borrar la prenda.</string>
     <string name="error_borrar_cuenta">No pudimos eliminar tu cuenta. Intenta de nuevo.</string>
+    <!-- Fotos, perfil y notificaciones -->
+    <string name="elegir_foto">Elegir foto</string>
+    <string name="tomar_foto">Tomar foto</string>
+    <string name="foto_de_perfil">Foto de perfil</string>
+    <string name="foto_actualizada">Foto actualizada</string>
+    <string name="error_cambiar_foto">No se pudo cambiar la foto. Intenta de nuevo.</string>
+    <string name="cantidad_prendas_cuenta">Tu armario: %1$d prendas</string>
+    <string name="canal_lecciones">Lecciones nuevas</string>
+    <string name="notificacion_leccion_titulo">Nueva lección en ORLO</string>
+    <!-- Favoritos y contadores del armario -->
+    <string name="filtro_favoritas">Favoritas (%1$d)</string>
+    <string name="filtro_favoritos">Favoritos (%1$d)</string>
+    <string name="resumen_armario">%1$d prendas · %2$d outfits</string>
+    <string name="sin_favoritas">Todavía no marcas prendas favoritas. Toca el corazón de una prenda.</string>
+    <string name="sin_outfits_favoritos">Todavía no marcas outfits favoritos.</string>
 </resources>

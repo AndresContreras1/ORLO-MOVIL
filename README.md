@@ -24,7 +24,7 @@ app/src/main/java/com/orlo/app
     └── utils                 componentes reutilizables y mensajes de error
 ```
 
-Flujo: `Screen → ViewModel → Repository → DataSource → Firebase / backend`. Las pantallas reciben lambdas y solo `AppNavigation` navega. Cada ViewModel expone un `StateFlow` con su estado (`isLoading`, `errorMessageRes` y los datos).
+Flujo: `Screen → ViewModel → Repository → DataSource → Firebase / backend`. Las prendas, los outfits, el perfil, el avance de las lecciones y las conversaciones llegan en vivo: los data sources los exponen con `callbackFlow` sobre `addSnapshotListener` y los ViewModels los recolectan mientras viven. Las pantallas reciben lambdas y solo `AppNavigation` navega. Cada ViewModel expone un `StateFlow` con su estado (`isLoading`, `errorMessageRes` y los datos).
 
 Los datos privados del usuario viven en Firestore bajo `users/{uid}` y las fotos en Storage (`garmentImages/{uid}/` y `profileImages/`). Firebase es compartido con la web: las reglas, las Cloud Functions, el seed y el modelo de datos (`docs/modelo-de-datos.md`) están en [ORLO-WEB](https://github.com/AndresContreras1/ORLO-WEB), carpeta `firebase/`.
 
@@ -72,5 +72,8 @@ Integración de los data sources contra el emulador de Firebase y prueba e2e del
 ## Piezas fuera de la arquitectura base
 
 - `FirebaseTokenInterceptor`: agrega el token de Firebase a cada petición al backend para que este sepa quién la hace.
-- `ImagenLocalDataSource`: comprime las fotos de las prendas antes de subirlas.
+- `ImagenLocalDataSource`: comprime las fotos (prendas y perfil) antes de subirlas y las endereza según el EXIF de la cámara.
+- Fotos desde la cámara con `TakePicture` y un `FileProvider` (`res/xml/rutas_de_fotos.xml`), o desde la galería y los archivos con `GetContent`. Ninguna de las dos pide permisos.
+- Notificaciones con Firebase Cloud Messaging: la app se suscribe al tema `lecciones` y `OrloMessagingService` muestra el aviso; tocarlo abre la lección. Desde Android 13 se pide el permiso al llegar al inicio. Con el proyecto `demo-orlo` no llegan avisos reales: hace falta un proyecto de Firebase real.
+- `EmuladorFirebase`: en debug, las URLs de las fotos se guardan con `127.0.0.1` (como las ve la web) y Coil las pide a `10.0.2.2`.
 - El cobro de la suscripción todavía no está conectado a Google Play: el acceso premium se activa desde el panel.

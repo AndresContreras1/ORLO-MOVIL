@@ -1,8 +1,9 @@
 package com.orlo.app.data.datasource
 
 import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.tasks.await
+import com.google.firebase.storage.StorageMetadata
 import javax.inject.Inject
+import kotlinx.coroutines.tasks.await
 
 // Sube y borra archivos en Firebase Storage. Solo ejecuta la operacion: si un archivo no existe, que
 // hacer con ese error lo decide el repositorio
@@ -10,11 +11,13 @@ class StorageRemoteDataSource @Inject constructor(
     private val storage: FirebaseStorage
 ) {
 
-    // Retorna la URL de descarga, que es la que se guarda en el documento de Firestore
+    // Retorna la URL de descarga, que es la que se guarda en el documento de Firestore. Las reglas
+    // de Storage solo aceptan imagenes: el tipo va en los metadatos
     suspend fun uploadImage(path: String, bytes: ByteArray): String {
         val ref = storage.reference.child(path)
-        ref.putBytes(bytes).await()
-        return ref.downloadUrl.await().toString()
+        val metadatos = StorageMetadata.Builder().setContentType("image/jpeg").build()
+        ref.putBytes(bytes, metadatos).await()
+        return EmuladorFirebase.urlParaGuardar(ref.downloadUrl.await().toString())
     }
 
     suspend fun deleteImage(path: String): Unit {
