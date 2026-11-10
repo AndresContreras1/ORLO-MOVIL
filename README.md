@@ -54,13 +54,19 @@ En desarrollo el backend corre con `ORLO_PREMIUM_PARA_TODOS=true`: todas las fun
 ./gradlew testDebugUnitTest
 ```
 
-Unitarias con MockK, Truth y `runTest`: mapeos de DTOs, repositorios y ViewModels.
+Unitarias con MockK, Truth y `runTest` (65): mapeos de DTOs, 31 de repositorios y 24 de ViewModels con los data sources o repositorios moqueados. Los flujos en vivo se simulan con `MutableStateFlow`.
 
 ```bash
 ./gradlew connectedDebugAndroidTest
 ```
 
-Integración de los data sources contra el emulador de Firebase y prueba e2e del registro con Hilt. Necesitan el emulador de Firebase y un emulador de Android encendidos.
+Instrumentadas (35), contra el emulador de Firebase de `ORLO-WEB/firebase` y el backend local:
+- 18 de data sources (Firestore: usuario, armario, conversaciones, guardados y outfit del día, con las reglas compartidas y los listeners en vivo).
+- 11 de repositorios con sus data sources reales (fotos a Storage, perfil y armario en vivo, borrado de fotos); lo que va al backend se reemplaza por un doble.
+- 2 de ViewModels con repositorios reales: lo que cambia en Firestore llega solo al estado.
+- 4 e2e con Hilt: el registro, un usuario nuevo que corrige una contraseña de 4 caracteres, hace el cuestionario y completa una lección, y un usuario registrado que agrega una prenda, arma un outfit, lo marca favorito y lo ve en el historial.
+
+Necesitan el emulador de Firebase, el backend y un emulador de Android encendidos.
 
 ## Pasar a Firebase real
 
