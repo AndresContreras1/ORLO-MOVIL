@@ -65,6 +65,9 @@ data class UsuarioFirestoreDto(
     val occasions: List<String> = emptyList(),
     val sensitiveDataConsent: Boolean = false,
     val currentResult: ResultadoFirestoreDto? = null,
+    val photoUrl: String? = null,
+    // Lo mantiene una Cloud Function al crear o borrar prendas: la app solo lo lee
+    val garmentsCount: Long = 0,
     val acceptedTermsAt: Long = 0,
     val createdAt: Long = 0,
 )
@@ -115,6 +118,8 @@ fun UsuarioFirestoreDto.toPerfilUi(): PerfilUi = PerfilUi(
     ocasiones = occasions,
     consentimientoDatosSensibles = sensitiveDataConsent,
     resultadoActual = currentResult?.takeIf { it.primary.code.isNotBlank() }?.toResultadoUi(),
+    fotoUrl = photoUrl?.takeIf { it.isNotBlank() },
+    cantidadPrendas = garmentsCount.toInt(),
 )
 
 // Sin consentimiento, los datos de apariencia se guardan vacios

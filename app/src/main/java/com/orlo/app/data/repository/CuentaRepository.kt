@@ -1,6 +1,7 @@
 package com.orlo.app.data.repository
 
 import android.util.Log
+import com.google.firebase.storage.StorageException
 import com.orlo.app.data.datasource.AuthRemoteDataSource
 import com.orlo.app.data.datasource.CuentaRemoteDataSource
 import com.orlo.app.data.datasource.StorageRemoteDataSource
@@ -37,6 +38,11 @@ class CuentaRepository @Inject constructor(
             val uid = authRemoteDataSource.uidOError()
             usuarioRemoteDataSource.borrarDatosDelUsuario(uid)
             storageRemoteDataSource.deleteFolder("$CARPETA_PRENDAS/$uid")
+            try {
+                storageRemoteDataSource.deleteImage(rutaFotoDePerfil(uid))
+            } catch (e: StorageException) {
+                if (e.errorCode != StorageException.ERROR_OBJECT_NOT_FOUND) throw e
+            }
             val respuesta = cuentaRemoteDataSource.borrarCuenta()
             if (respuesta.deleted == false) throw ErrorDelServidorException()
             authRemoteDataSource.signOut()

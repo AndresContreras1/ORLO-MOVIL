@@ -1,6 +1,7 @@
 package com.orlo.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -31,6 +32,8 @@ import com.orlo.app.ui.screens.welcome.WelcomeScreen
 @Composable
 fun AppNavigation(
     navController: NavHostController,
+    leccionPendiente: String?,
+    onLeccionAbierta: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Entrar a una seccion principal borra la pila: atras no vuelve al registro ni al cuestionario
@@ -135,6 +138,13 @@ fun AppNavigation(
         }
 
         composable(Screen.Home.route) {
+            // Si se entro tocando el aviso de una leccion nueva, se abre esa leccion encima del inicio
+            LaunchedEffect(leccionPendiente) {
+                if (leccionPendiente != null) {
+                    navController.navigate(Screen.LessonDetail.createRoute(leccionPendiente))
+                    onLeccionAbierta()
+                }
+            }
             HomeScreen(
                 homeViewModel = hiltViewModel(),
                 onAprende = { navController.navigate(Screen.Lessons.route) },

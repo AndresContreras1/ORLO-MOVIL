@@ -7,8 +7,11 @@ import com.orlo.app.data.dtos.GuardarOutfitDto
 import com.orlo.app.data.dtos.GuardarPrendaDto
 import com.orlo.app.data.dtos.OutfitFirestoreDto
 import com.orlo.app.data.dtos.PrendaFirestoreDto
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 
 // Prendas y outfits son subcolecciones del usuario: nadie mas puede leerlas (reglas de seguridad)
 class ArmarioFirestoreDataSourceImpl @Inject constructor(
@@ -24,6 +27,21 @@ class ArmarioFirestoreDataSourceImpl @Inject constructor(
         return respuesta.documents.mapNotNull { doc ->
             doc.toObject(PrendaFirestoreDto::class.java)?.copy(id = doc.id)
         }
+    }
+
+    override fun observarPrendas(userId: String): Flow<List<PrendaFirestoreDto>> = callbackFlow {
+        val listener = prendas(userId)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                trySend(snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(PrendaFirestoreDto::class.java)?.copy(id = doc.id)
+                }.orEmpty())
+            }
+        awaitClose { listener.remove() }
     }
 
     override suspend fun getPrenda(userId: String, prendaId: String): PrendaFirestoreDto? {
@@ -50,6 +68,21 @@ class ArmarioFirestoreDataSourceImpl @Inject constructor(
         return respuesta.documents.mapNotNull { doc ->
             doc.toObject(OutfitFirestoreDto::class.java)?.copy(id = doc.id)
         }
+    }
+
+    override fun observarOutfits(userId: String): Flow<List<OutfitFirestoreDto>> = callbackFlow {
+        val listener = outfits(userId)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                trySend(snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(OutfitFirestoreDto::class.java)?.copy(id = doc.id)
+                }.orEmpty())
+            }
+        awaitClose { listener.remove() }
     }
 
     override suspend fun getOutfit(userId: String, outfitId: String): OutfitFirestoreDto? {
