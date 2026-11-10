@@ -6,9 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.orlo.app.R
 import com.orlo.app.data.injection.IoDispatcher
 import com.orlo.app.data.model.CategoriaPrenda
-import com.orlo.app.data.model.ElementoHistorialUi
+import com.orlo.app.data.model.ConversacionUi
 import com.orlo.app.data.model.OutfitUi
 import com.orlo.app.data.model.PerfilUi
+import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.repository.ArmarioRepository
 import com.orlo.app.data.repository.AsesorRepository
 import com.orlo.app.data.repository.CuentaRepository
@@ -17,16 +18,20 @@ import com.orlo.app.ui.utils.mensajeDeError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Mi armario: prendas, outfits, mi estilo e historial en un solo lugar
+// Mi armario: prendas, outfits, mi estilo e historial en un solo lugar. Las prendas, los outfits,
+// el perfil y las conversaciones llegan en vivo de Firestore: guardar, borrar o marcar favorito no
+// necesita recargar, la lista cambia sola (y al instante, con la cache local de Firestore)
 @HiltViewModel
 class WardrobeViewModel @Inject constructor(
     private val armarioRepository: ArmarioRepository,
@@ -39,49 +44,56 @@ class WardrobeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(WardrobeState())
     val uiState: StateFlow<WardrobeState> = _uiState.asStateFlow()
 
-    // Se llama al entrar y al volver de un formulario: cada fuente se pide al tiempo
+    private var observacion: Job? = null
+
+    // Se llama al entrar (LaunchedEffect). Si ya esta escuchando no hace nada; si fallo, empieza
+    // de nuevo
     fun cargar() {
-        viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(isLoading = it.cuenta == null, errorCargaRes = null) }
+        if (observacion?.isActive == true && _uiState.value.errorCargaRes == null) return
+        observacion?.cancel()
+        _uiState.update { it.copy(isLoading = it.cuenta == null, errorCargaRes = null) }
+        observacion = viewModelScope.launch(ioDispatcher) {
+            // La cuenta y los resultados del cuestionario se piden una vez
+            val (cuenta, resultados) = coroutineScope {
+                val cuenta = async { cuentaRepository.getCuenta() }
+                val resultados = async { usuarioRepository.getResultados() }
+                cuenta.await() to resultados.await()
+            }
+            if (cuenta.isFailure) {
+                Log.d("WardrobeViewModel", cuenta.exceptionOrNull()?.message.toString())
+                _uiState.update {
+                    it.copy(isLoading = false, errorCargaRes = mensajeDeError(cuenta.exceptionOrNull(), R.string.error_cargar_armario))
+                }
+                return@launch
+            }
+            _uiState.update { it.copy(cuenta = cuenta.getOrNull(), resultados = resultados.getOrNull().orEmpty()) }
 
-            coroutineScope {
-                val cuentaAsync = async { cuentaRepository.getCuenta() }
-                val prendasAsync = async { armarioRepository.getPrendas() }
-                val outfitsAsync = async { armarioRepository.getOutfits() }
-                val perfilAsync = async { usuarioRepository.getPerfil() }
-                val resultadosAsync = async { usuarioRepository.getResultados() }
-                val conversacionesAsync = async { asesorRepository.getConversaciones() }
-
-                val cuenta = cuentaAsync.await()
-                val prendas = prendasAsync.await()
-                val outfits = outfitsAsync.await()
-
-                if (cuenta.isFailure || prendas.isFailure || outfits.isFailure) {
-                    val error = cuenta.exceptionOrNull() ?: prendas.exceptionOrNull() ?: outfits.exceptionOrNull()
-                    Log.d("WardrobeViewModel", error?.message.toString())
+            combine(
+                armarioRepository.observarPrendas(),
+                armarioRepository.observarOutfits(),
+                usuarioRepository.observarPerfil(),
+                asesorRepository.observarConversaciones(),
+            ) { prendas, outfits, perfil, conversaciones ->
+                EnVivo(prendas, outfits, perfil, conversaciones)
+            }.collect { datos ->
+                // Sin prendas u outfits no hay armario que mostrar; el perfil y las conversaciones
+                // solo completan Mi estilo y el historial
+                val error = datos.prendas.exceptionOrNull() ?: datos.outfits.exceptionOrNull()
+                if (error != null) {
+                    Log.d("WardrobeViewModel", error.message.toString())
                     _uiState.update {
                         it.copy(isLoading = false, errorCargaRes = mensajeDeError(error, R.string.error_cargar_armario))
                     }
-                    return@coroutineScope
-                }
-
-                val listaOutfits = outfits.getOrThrow()
-                // El historial junta tres fuentes y las ordena por fecha, de la mas reciente
-                val historial = (
-                    resultadosAsync.await().getOrNull().orEmpty().map { ElementoHistorialUi.Resultado(it) } +
-                        listaOutfits.map { ElementoHistorialUi.Outfit(it) } +
-                        conversacionesAsync.await().getOrNull().orEmpty().map { ElementoHistorialUi.Conversacion(it) }
-                    ).sortedByDescending { it.fecha }
-
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        cuenta = cuenta.getOrNull(),
-                        prendas = prendas.getOrThrow(),
-                        outfits = listaOutfits,
-                        perfil = perfilAsync.await().getOrNull() ?: PerfilUi(),
-                        historial = historial,
-                    )
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            prendas = datos.prendas.getOrThrow(),
+                            outfits = datos.outfits.getOrThrow(),
+                            perfil = datos.perfil.getOrNull() ?: it.perfil,
+                            conversaciones = datos.conversaciones.getOrNull() ?: it.conversaciones,
+                        )
+                    }
                 }
             }
         }
@@ -100,22 +112,32 @@ class WardrobeViewModel @Inject constructor(
         _uiState.update { it.copy(filtroColor = if (it.filtroColor == color) null else color) }
     }
 
-    // Se cambia en pantalla de una vez y, si falla, se devuelve como estaba
-    fun marcarFavorito(outfit: OutfitUi) {
-        val nuevo = !outfit.favorito
-        _uiState.update { estado ->
-            estado.copy(outfits = estado.outfits.map { if (it.id == outfit.id) it.copy(favorito = nuevo) else it })
-        }
+    fun alternarPrendasFavoritas() {
+        _uiState.update { it.copy(soloPrendasFavoritas = !it.soloPrendasFavoritas) }
+    }
+
+    fun alternarOutfitsFavoritos() {
+        _uiState.update { it.copy(soloOutfitsFavoritos = !it.soloOutfitsFavoritos) }
+    }
+
+    // Firestore cambia la lista en pantalla de una vez; si la escritura falla, la devuelve como
+    // estaba y aqui solo queda el mensaje
+    fun marcarPrendaFavorita(prenda: PrendaUi) {
         viewModelScope.launch(ioDispatcher) {
-            val result = armarioRepository.marcarOutfitFavorito(outfit.id, nuevo)
+            val result = armarioRepository.marcarPrendaFavorita(prenda.id, !prenda.favorita)
             if (result.isFailure) {
                 Log.d("WardrobeViewModel", result.exceptionOrNull()?.message.toString())
-                _uiState.update { estado ->
-                    estado.copy(
-                        outfits = estado.outfits.map { if (it.id == outfit.id) it.copy(favorito = outfit.favorito) else it },
-                        errorMessageRes = mensajeDeError(result.exceptionOrNull(), R.string.error_guardar_outfit),
-                    )
-                }
+                _uiState.update { it.copy(errorMessageRes = mensajeDeError(result.exceptionOrNull(), R.string.error_guardar_prenda)) }
+            }
+        }
+    }
+
+    fun marcarFavorito(outfit: OutfitUi) {
+        viewModelScope.launch(ioDispatcher) {
+            val result = armarioRepository.marcarOutfitFavorito(outfit.id, !outfit.favorito)
+            if (result.isFailure) {
+                Log.d("WardrobeViewModel", result.exceptionOrNull()?.message.toString())
+                _uiState.update { it.copy(errorMessageRes = mensajeDeError(result.exceptionOrNull(), R.string.error_guardar_outfit)) }
             }
         }
     }
@@ -124,9 +146,7 @@ class WardrobeViewModel @Inject constructor(
         _uiState.update { it.copy(outfitConMenu = null) }
         viewModelScope.launch(ioDispatcher) {
             val result = armarioRepository.duplicarOutfit(outfit, sufijo, System.currentTimeMillis())
-            if (result.isSuccess) {
-                _uiState.update { it.copy(outfits = listOf(result.getOrThrow()) + it.outfits, errorMessageRes = null) }
-            } else {
+            if (result.isFailure) {
                 Log.d("WardrobeViewModel", result.exceptionOrNull()?.message.toString())
                 _uiState.update { it.copy(errorMessageRes = mensajeDeError(result.exceptionOrNull(), R.string.error_guardar_outfit)) }
             }
@@ -149,18 +169,23 @@ class WardrobeViewModel @Inject constructor(
         _uiState.update { it.copy(outfitPorBorrar = null) }
     }
 
-    // La lista se actualiza cuando el repositorio confirma el borrado
     fun borrarOutfit() {
         val outfit = _uiState.value.outfitPorBorrar ?: return
         _uiState.update { it.copy(outfitPorBorrar = null) }
         viewModelScope.launch(ioDispatcher) {
             val result = armarioRepository.borrarOutfit(outfit.id)
-            if (result.isSuccess) {
-                _uiState.update { estado -> estado.copy(outfits = estado.outfits.filterNot { it.id == outfit.id }, errorMessageRes = null) }
-            } else {
+            if (result.isFailure) {
                 Log.d("WardrobeViewModel", result.exceptionOrNull()?.message.toString())
                 _uiState.update { it.copy(errorMessageRes = mensajeDeError(result.exceptionOrNull(), R.string.error_borrar_outfit)) }
             }
         }
     }
 }
+
+// Lo ultimo que llego de cada fuente en vivo
+private data class EnVivo(
+    val prendas: Result<List<PrendaUi>>,
+    val outfits: Result<List<OutfitUi>>,
+    val perfil: Result<PerfilUi>,
+    val conversaciones: Result<List<ConversacionUi>>,
+)

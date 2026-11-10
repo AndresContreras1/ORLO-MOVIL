@@ -1,6 +1,7 @@
 package com.orlo.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -11,6 +12,7 @@ import androidx.navigation.navArgument
 import com.orlo.app.ui.screens.account.AccountScreen
 import com.orlo.app.ui.screens.advisor.AdvisorScreen
 import com.orlo.app.ui.screens.explore.ExploreScreen
+import com.orlo.app.ui.screens.exploreitem.ExploreItemScreen
 import com.orlo.app.ui.screens.garmentform.GarmentFormScreen
 import com.orlo.app.ui.screens.home.HomeScreen
 import com.orlo.app.ui.screens.lessondetail.LessonDetailScreen
@@ -31,6 +33,8 @@ import com.orlo.app.ui.screens.welcome.WelcomeScreen
 @Composable
 fun AppNavigation(
     navController: NavHostController,
+    leccionPendiente: String?,
+    onLeccionAbierta: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Entrar a una seccion principal borra la pila: atras no vuelve al registro ni al cuestionario
@@ -135,6 +139,13 @@ fun AppNavigation(
         }
 
         composable(Screen.Home.route) {
+            // Si se entro tocando el aviso de una leccion nueva, se abre esa leccion encima del inicio
+            LaunchedEffect(leccionPendiente) {
+                if (leccionPendiente != null) {
+                    navController.navigate(Screen.LessonDetail.createRoute(leccionPendiente))
+                    onLeccionAbierta()
+                }
+            }
             HomeScreen(
                 homeViewModel = hiltViewModel(),
                 onAprende = { navController.navigate(Screen.Lessons.route) },
@@ -179,7 +190,22 @@ fun AppNavigation(
         }
 
         composable(Screen.Explore.route) {
-            ExploreScreen(onIrAlArmario = { navController.navigate(Screen.Wardrobe.route) })
+            ExploreScreen(
+                exploreViewModel = hiltViewModel(),
+                onItem = { navController.navigate(Screen.ExploreItem.createRoute(it)) },
+                onIrAlArmario = { navController.navigate(Screen.Wardrobe.route) },
+            )
+        }
+
+        composable(
+            route = Screen.ExploreItem.route,
+            arguments = listOf(navArgument("itemId") { type = NavType.StringType }),
+        ) {
+            ExploreItemScreen(
+                exploreItemViewModel = hiltViewModel(),
+                itemId = it.arguments?.getString("itemId") ?: "",
+                onBack = { volver() },
+            )
         }
 
         composable(Screen.Wardrobe.route) {

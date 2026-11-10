@@ -24,7 +24,7 @@ app/src/main/java/com/orlo/app
     └── utils                 componentes reutilizables y mensajes de error
 ```
 
-Flujo: `Screen → ViewModel → Repository → DataSource → Firebase / backend`. Las pantallas reciben lambdas y solo `AppNavigation` navega. Cada ViewModel expone un `StateFlow` con su estado (`isLoading`, `errorMessageRes` y los datos).
+Flujo: `Screen → ViewModel → Repository → DataSource → Firebase / backend`. Las prendas, los outfits, el perfil, el avance de las lecciones y las conversaciones llegan en vivo: los data sources los exponen con `callbackFlow` sobre `addSnapshotListener` y los ViewModels los recolectan mientras viven. Las pantallas reciben lambdas y solo `AppNavigation` navega. Cada ViewModel expone un `StateFlow` con su estado (`isLoading`, `errorMessageRes` y los datos).
 
 Los datos privados del usuario viven en Firestore bajo `users/{uid}` y las fotos en Storage (`garmentImages/{uid}/` y `profileImages/`). Firebase es compartido con la web: las reglas, las Cloud Functions, el seed y el modelo de datos (`docs/modelo-de-datos.md`) están en [ORLO-WEB](https://github.com/AndresContreras1/ORLO-WEB), carpeta `firebase/`.
 
@@ -54,13 +54,19 @@ En desarrollo el backend corre con `ORLO_PREMIUM_PARA_TODOS=true`: todas las fun
 ./gradlew testDebugUnitTest
 ```
 
-Unitarias con MockK, Truth y `runTest`: mapeos de DTOs, repositorios y ViewModels.
+Unitarias con MockK, Truth y `runTest` (68): 10 de mapeos de DTOs, 31 de repositorios y 27 de ViewModels con los data sources o repositorios moqueados. Los flujos en vivo se simulan con `MutableStateFlow`.
 
 ```bash
 ./gradlew connectedDebugAndroidTest
 ```
 
-Integración de los data sources contra el emulador de Firebase y prueba e2e del registro con Hilt. Necesitan el emulador de Firebase y un emulador de Android encendidos.
+Instrumentadas (36), contra el emulador de Firebase de `ORLO-WEB/firebase` y el backend local:
+- 18 de data sources (Firestore: usuario, armario, conversaciones, guardados y outfit del día, con las reglas compartidas y los listeners en vivo).
+- 12 de repositorios con sus data sources reales (fotos a Storage, perfil, armario y avance en vivo, borrado de fotos); lo que va al backend se reemplaza por un doble.
+- 2 de ViewModels con repositorios reales: lo que cambia en Firestore llega solo al estado.
+- 4 e2e con Hilt: el registro, un usuario nuevo que corrige una contraseña de 4 caracteres, hace el cuestionario y completa una lección, y un usuario registrado que agrega una prenda, arma un outfit, lo marca favorito y lo ve en el historial.
+
+Necesitan el emulador de Firebase, el backend y un emulador de Android encendidos.
 
 ## Pasar a Firebase real
 
@@ -72,5 +78,9 @@ Integración de los data sources contra el emulador de Firebase y prueba e2e del
 ## Piezas fuera de la arquitectura base
 
 - `FirebaseTokenInterceptor`: agrega el token de Firebase a cada petición al backend para que este sepa quién la hace.
-- `ImagenLocalDataSource`: comprime las fotos de las prendas antes de subirlas.
+- `ImagenLocalDataSource`: comprime las fotos (prendas y perfil) antes de subirlas y las endereza según el EXIF de la cámara.
+- Fotos desde la cámara con `TakePicture` y un `FileProvider` (`res/xml/rutas_de_fotos.xml`), o desde la galería y los archivos con `GetContent`. Ninguna de las dos pide permisos.
+- Notificaciones con Firebase Cloud Messaging: la app se suscribe al tema `lecciones` y `OrloMessagingService` muestra el aviso; tocarlo abre la lección. Desde Android 13 se pide el permiso al llegar al inicio. Con el proyecto `demo-orlo` no llegan avisos reales: hace falta un proyecto de Firebase real.
+- Coil manda un User-Agent propio (`ORLO/<versión> (Android)`): Wikimedia, de donde salen las fotos del catálogo de Explora, rechaza las descargas sin él.
+- `EmuladorFirebase`: en debug, las URLs de las fotos se guardan con `127.0.0.1` (como las ve la web) y Coil las pide a `10.0.2.2`.
 - El cobro de la suscripción todavía no está conectado a Google Play: el acceso premium se activa desde el panel.

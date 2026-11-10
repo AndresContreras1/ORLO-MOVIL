@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -15,9 +16,12 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,9 +52,13 @@ fun PestanaPrendas(
     hayPrendas: Boolean,
     filtroCategoria: CategoriaPrenda?,
     filtroColor: String?,
+    soloFavoritas: Boolean,
+    favoritas: Int,
     onFiltroCategoria: (CategoriaPrenda) -> Unit,
     onFiltroColor: (String) -> Unit,
+    onSoloFavoritas: () -> Unit,
     onPrenda: (PrendaUi) -> Unit,
+    onFavorita: (PrendaUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyVerticalGrid(
@@ -62,6 +70,16 @@ fun PestanaPrendas(
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                item {
+                    FilterChip(
+                        selected = soloFavoritas,
+                        onClick = onSoloFavoritas,
+                        label = { Text(text = stringResource(R.string.filtro_favoritas, favoritas)) },
+                        leadingIcon = { Icon(imageVector = Icons.Filled.Favorite, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                        colors = coloresDeChip(),
+                        modifier = Modifier.testTag("filtroFavoritas"),
+                    )
+                }
                 items(CategoriaPrenda.entries) { categoria ->
                     FilterChip(
                         selected = filtroCategoria == categoria,
@@ -88,11 +106,22 @@ fun PestanaPrendas(
         }
         if (prendas.isEmpty()) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                EmptyMessage(messageRes = if (hayPrendas) R.string.sin_prendas_filtro else R.string.sin_prendas)
+                EmptyMessage(
+                    messageRes = when {
+                        !hayPrendas -> R.string.sin_prendas
+                        soloFavoritas && favoritas == 0 -> R.string.sin_favoritas
+                        else -> R.string.sin_prendas_filtro
+                    }
+                )
             }
         }
         items(prendas, key = { it.id }) { prenda ->
-            PrendaCard(prenda = prenda, onClick = { onPrenda(prenda) }, modifier = Modifier.testTag("prenda_${prenda.id}"))
+            PrendaCard(
+                prenda = prenda,
+                onClick = { onPrenda(prenda) },
+                onFavorito = { onFavorita(prenda) },
+                modifier = Modifier.testTag("prenda_${prenda.id}"),
+            )
         }
     }
 }
@@ -104,6 +133,9 @@ private fun prendasConColor(prendas: List<PrendaUi>, filtroColor: String?, color
 @Composable
 fun PestanaOutfits(
     outfits: List<OutfitUi>,
+    soloFavoritos: Boolean,
+    favoritos: Int,
+    onSoloFavoritos: () -> Unit,
     nombresDePrendas: (OutfitUi) -> List<String>,
     onOutfit: (OutfitUi) -> Unit,
     onFavorito: (OutfitUi) -> Unit,
@@ -119,8 +151,18 @@ fun PestanaOutfits(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        item {
+            FilterChip(
+                selected = soloFavoritos,
+                onClick = onSoloFavoritos,
+                label = { Text(text = stringResource(R.string.filtro_favoritos, favoritos)) },
+                leadingIcon = { Icon(imageVector = Icons.Filled.Favorite, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                colors = coloresDeChip(),
+                modifier = Modifier.testTag("filtroOutfitsFavoritos"),
+            )
+        }
         if (outfits.isEmpty()) {
-            item { EmptyMessage(messageRes = R.string.sin_outfits) }
+            item { EmptyMessage(messageRes = if (soloFavoritos) R.string.sin_outfits_favoritos else R.string.sin_outfits) }
         }
         items(outfits, key = { it.id }) { outfit ->
             OutfitCard(

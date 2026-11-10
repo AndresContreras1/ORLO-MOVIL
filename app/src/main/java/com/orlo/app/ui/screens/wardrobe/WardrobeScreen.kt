@@ -90,8 +90,11 @@ fun WardrobeScreen(
                 onPestana = { wardrobeViewModel.cambiarPestana(it) },
                 onFiltroCategoria = { wardrobeViewModel.filtrarCategoria(it) },
                 onFiltroColor = { wardrobeViewModel.filtrarColor(it) },
+                onPrendasFavoritas = { wardrobeViewModel.alternarPrendasFavoritas() },
+                onOutfitsFavoritos = { wardrobeViewModel.alternarOutfitsFavoritos() },
                 onNuevaPrenda = onNuevaPrenda,
                 onPrenda = { onPrenda(it.id) },
+                onPrendaFavorita = { wardrobeViewModel.marcarPrendaFavorita(it) },
                 onNuevoOutfit = onNuevoOutfit,
                 onOutfit = { onOutfit(it.id) },
                 onFavorito = { wardrobeViewModel.marcarFavorito(it) },
@@ -114,8 +117,11 @@ fun WardrobeScreenContent(
     onPestana: (PestanaArmario) -> Unit,
     onFiltroCategoria: (CategoriaPrenda) -> Unit,
     onFiltroColor: (String) -> Unit,
+    onPrendasFavoritas: () -> Unit,
+    onOutfitsFavoritos: () -> Unit,
     onNuevaPrenda: () -> Unit,
     onPrenda: (PrendaUi) -> Unit,
+    onPrendaFavorita: (PrendaUi) -> Unit,
     onNuevoOutfit: () -> Unit,
     onOutfit: (OutfitUi) -> Unit,
     onFavorito: (OutfitUi) -> Unit,
@@ -137,7 +143,11 @@ fun WardrobeScreenContent(
 
     Box(modifier = modifier.fillMaxSize().testTag("wardrobeScreen")) {
         Column(modifier = Modifier.fillMaxSize()) {
-            ScreenTitle(titulo = stringResource(R.string.armario_titulo), modifier = Modifier.padding(start = 20.dp, top = 16.dp, bottom = 8.dp))
+            ScreenTitle(
+                titulo = stringResource(R.string.armario_titulo),
+                subtitulo = stringResource(R.string.resumen_armario, state.prendas.size, state.outfits.size),
+                modifier = Modifier.padding(start = 20.dp, top = 16.dp, bottom = 8.dp),
+            )
             ScrollableTabRow(selectedTabIndex = state.pestana.ordinal, edgePadding = 16.dp) {
                 pestanas.forEach { (pestana, texto) ->
                     Tab(
@@ -155,12 +165,19 @@ fun WardrobeScreenContent(
                     hayPrendas = state.prendas.isNotEmpty(),
                     filtroCategoria = state.filtroCategoria,
                     filtroColor = state.filtroColor,
+                    soloFavoritas = state.soloPrendasFavoritas,
+                    favoritas = state.prendasFavoritas,
                     onFiltroCategoria = onFiltroCategoria,
                     onFiltroColor = onFiltroColor,
+                    onSoloFavoritas = onPrendasFavoritas,
                     onPrenda = onPrenda,
+                    onFavorita = onPrendaFavorita,
                 )
                 PestanaArmario.OUTFITS -> PestanaOutfits(
-                    outfits = state.outfits,
+                    outfits = state.outfitsFiltrados,
+                    soloFavoritos = state.soloOutfitsFavoritos,
+                    favoritos = state.outfitsFavoritos,
+                    onSoloFavoritos = onOutfitsFavoritos,
                     nombresDePrendas = { state.nombresDePrendas(it) },
                     onOutfit = onOutfit,
                     onFavorito = onFavorito,
@@ -217,7 +234,8 @@ fun WardrobeScreenPreview() {
                 prendas = LocalPreviewProvider.prendas,
                 outfits = LocalPreviewProvider.outfits,
             ),
-            onPestana = {}, onFiltroCategoria = {}, onFiltroColor = {}, onNuevaPrenda = {}, onPrenda = {},
+            onPestana = {}, onFiltroCategoria = {}, onFiltroColor = {}, onPrendasFavoritas = {}, onOutfitsFavoritos = {},
+            onNuevaPrenda = {}, onPrenda = {}, onPrendaFavorita = {},
             onNuevoOutfit = {}, onOutfit = {}, onFavorito = {}, onAbrirMenu = {}, onCerrarMenu = {},
             onDuplicar = {}, onBorrarOutfit = {},
             onConversacion = {}, onEditarPreferencias = {}, onRehacerCuestionario = {},

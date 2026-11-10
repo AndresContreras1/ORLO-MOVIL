@@ -1,11 +1,17 @@
 package com.orlo.app.ui.screens.home
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -13,7 +19,6 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -26,19 +31,25 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.orlo.app.R
+import com.orlo.app.data.local.LocalPreviewProvider
 import com.orlo.app.data.model.CuentaUi
 import com.orlo.app.data.model.EstiloUi
+import com.orlo.app.data.model.OutfitDelDiaUi
 import com.orlo.app.data.model.ResultadoUi
 import com.orlo.app.ui.screens.home.components.TarjetaDeSeccion
+import com.orlo.app.ui.screens.home.components.TarjetaOutfitDelDia
 import com.orlo.app.ui.screens.result.components.TarjetaDeEstilo
 import com.orlo.app.ui.theme.OrloTheme
 import com.orlo.app.ui.utils.AppButton
 import com.orlo.app.ui.utils.ErrorBox
+import com.orlo.app.ui.utils.FotoDePerfil
 import com.orlo.app.ui.utils.LoadingBox
 
 @Composable
@@ -54,8 +65,20 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val state by homeViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
-    // Recarga al volver a la pestana
+    // Desde Android 13 los avisos de lecciones nuevas necesitan permiso: se pide una vez al
+    // llegar al inicio. Si lo niega, la app sigue igual
+    val permisoNotificaciones = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    // Recarga la cuenta al volver a la pestana; el perfil ya llega en vivo
     LaunchedEffect(Unit) {
         homeViewModel.cargar()
     }
@@ -66,8 +89,13 @@ fun HomeScreen(
         error != null -> ErrorBox(messageRes = error, onRetry = { homeViewModel.cargar() }, modifier = modifier)
         else -> HomeScreenContent(
             nombre = state.nombre,
+            fotoUrl = state.fotoUrl,
             resultado = state.resultado,
             cuenta = state.cuenta,
+            outfitDelDia = state.outfitDelDia,
+            pidiendoOutfit = state.pidiendoOutfit,
+            errorOutfitRes = state.errorOutfitRes,
+            onPedirOutfit = { homeViewModel.pedirOutfitDelDia() },
             onAprende = onAprende,
             onAsesor = onAsesor,
             onExplora = onExplora,
@@ -83,8 +111,13 @@ fun HomeScreen(
 @Composable
 fun HomeScreenContent(
     nombre: String,
+    fotoUrl: String?,
     resultado: ResultadoUi?,
     cuenta: CuentaUi?,
+    outfitDelDia: OutfitDelDiaUi?,
+    pidiendoOutfit: Boolean,
+    errorOutfitRes: Int?,
+    onPedirOutfit: () -> Unit,
     onAprende: () -> Unit,
     onAsesor: () -> Unit,
     onExplora: () -> Unit,
@@ -117,8 +150,8 @@ fun HomeScreenContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            IconButton(onClick = onCuenta, modifier = Modifier.testTag("btnCuenta")) {
-                Icon(imageVector = Icons.Outlined.AccountCircle, contentDescription = stringResource(R.string.cuenta_titulo))
+            IconButton(onClick = onCuenta, modifier = Modifier.size(48.dp).testTag("btnCuenta")) {
+                FotoDePerfil(url = fotoUrl)
             }
         }
 
@@ -126,6 +159,15 @@ fun HomeScreenContent(
             TarjetaDeEstilo(resultado = resultado, mostrarDescripcion = false)
         } else {
             AppButton(texto = stringResource(R.string.descubrir_mi_estilo), onClick = onCuestionario)
+        }
+
+        if (resultado != null) {
+            TarjetaOutfitDelDia(
+                outfit = outfitDelDia,
+                pidiendo = pidiendoOutfit,
+                errorRes = errorOutfitRes,
+                onPedir = onPedirOutfit,
+            )
         }
 
         if (bloqueada) {
@@ -189,8 +231,10 @@ fun HomeScreenPreview() {
     OrloTheme {
         HomeScreenContent(
             nombre = "Laura",
+            fotoUrl = null,
             resultado = ResultadoUi(principal = EstiloUi(nombre = "Urbano", paleta = listOf("#2B2622", "#3D5A80")), secundario = EstiloUi(nombre = "Creativo")),
             cuenta = CuentaUi(premium = false),
+            outfitDelDia = LocalPreviewProvider.outfitDelDia, pidiendoOutfit = false, errorOutfitRes = null, onPedirOutfit = {},
             onAprende = {}, onAsesor = {}, onExplora = {}, onArmario = {}, onCuenta = {}, onPremium = {}, onCuestionario = {},
         )
     }

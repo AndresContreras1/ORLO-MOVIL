@@ -3,6 +3,8 @@ package com.orlo.app.data.datasource
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
@@ -46,8 +48,24 @@ class ImagenLocalDataSource @Inject constructor(
         }
 
         val salida = ByteArrayOutputStream()
-        final.compress(Bitmap.CompressFormat.JPEG, CALIDAD_JPEG, salida)
+        enderezar(uri, final).compress(Bitmap.CompressFormat.JPEG, CALIDAD_JPEG, salida)
         return salida.toByteArray()
+    }
+
+    // Las fotos de la camara suelen venir de lado con la orientacion escrita en el EXIF: se giran
+    // aqui porque al comprimir el JPEG se pierde ese dato
+    private fun enderezar(uri: Uri, foto: Bitmap): Bitmap {
+        val orientacion = context.contentResolver.openInputStream(uri)?.use {
+            ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+        } ?: ExifInterface.ORIENTATION_NORMAL
+        val grados = when (orientacion) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> 90F
+            ExifInterface.ORIENTATION_ROTATE_180 -> 180F
+            ExifInterface.ORIENTATION_ROTATE_270 -> 270F
+            else -> return foto
+        }
+        val giro = Matrix().apply { postRotate(grados) }
+        return Bitmap.createBitmap(foto, 0, 0, foto.width, foto.height, giro, true)
     }
 
     companion object {

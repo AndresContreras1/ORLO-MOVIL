@@ -8,25 +8,26 @@ import com.orlo.app.data.datasource.ConversacionRemoteDataSource
 import com.orlo.app.data.datasource.UsuarioRemoteDataSource
 import com.orlo.app.data.dtos.HistorialAsesorDto
 import com.orlo.app.data.dtos.MensajeAsesorDto
-import com.orlo.app.data.dtos.PerfilAsesorDto
-import com.orlo.app.data.dtos.PrendaAsesorDto
 import com.orlo.app.data.dtos.toConversacionUi
 import com.orlo.app.data.dtos.toGuardarMensajeDto
 import com.orlo.app.data.dtos.toMensajeChatUi
+import com.orlo.app.data.dtos.toPerfilAsesorDto
 import com.orlo.app.data.dtos.toPerfilUi
+import com.orlo.app.data.dtos.toPrendaAsesorDto
 import com.orlo.app.data.dtos.toPrendaUi
 import com.orlo.app.data.dtos.toRespuestaAsesorUi
 import com.orlo.app.data.model.AccionRapida
 import com.orlo.app.data.model.ConversacionUi
 import com.orlo.app.data.model.MensajeChatUi
-import com.orlo.app.data.model.OpcionesDelPerfil
 import com.orlo.app.data.model.PerfilUi
 import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.model.RespuestaAsesorUi
 import com.orlo.app.data.model.RolMensaje
+import javax.inject.Inject
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 // La conversacion en la que quedo el mensaje y la respuesta del asesor
 data class ResultadoPregunta(
@@ -108,6 +109,11 @@ class AsesorRepository @Inject constructor(
         }
     }
 
+    fun observarConversaciones(): Flow<Result<List<ConversacionUi>>> =
+        authRemoteDataSource.enVivo("AsesorRepository") { uid ->
+            conversacionRemoteDataSource.observarConversaciones(uid).map { lista -> lista.map { it.toConversacionUi() } }
+        }
+
     suspend fun getMensajes(conversacionId: String): Result<List<MensajeChatUi>> {
         return try {
             Result.success(
@@ -129,28 +135,6 @@ class AsesorRepository @Inject constructor(
             Result.failure(errorDe(e))
         }
     }
-
-    // Lo que el asesor sabe del usuario, en palabras: el primer nombre y las preferencias. Nada de
-    // correo, apellidos ni identificadores
-    private fun PerfilUi.toPerfilAsesorDto(): PerfilAsesorDto = PerfilAsesorDto(
-        name = nombre.trim().split(" ").firstOrNull().orEmpty(),
-        ageRange = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.rangosDeEdad, rangoEdad),
-        garmentPronoun = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.tratoPrendas, tratoPrendas),
-        primaryStyle = resultadoActual?.principal?.nombre,
-        secondaryStyle = resultadoActual?.secundario?.nombre,
-        skinTone = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.tonosDePiel, tonoPiel),
-        hairColor = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.coloresDeCabello, colorCabello),
-        eyeColor = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.coloresDeOjos, colorOjos),
-        climate = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.climas, clima),
-        budget = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.presupuestos, presupuesto),
-        occasions = ocasiones.mapNotNull { OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.ocasiones, it) },
-    )
-
-    private fun PrendaUi.toPrendaAsesorDto(): PrendaAsesorDto = PrendaAsesorDto(
-        name = nombre.ifBlank { categoria.paraAsesor },
-        category = categoria.paraAsesor,
-        color = color,
-    )
 
     companion object {
         const val MAX_HISTORIAL = 10

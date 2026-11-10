@@ -1,21 +1,29 @@
 package com.orlo.app.data.repository
 
+import android.net.Uri
 import android.util.Log
 import com.orlo.app.data.datasource.AuthRemoteDataSource
+import com.orlo.app.data.datasource.ImagenLocalDataSource
+import com.orlo.app.data.datasource.StorageRemoteDataSource
 import com.orlo.app.data.datasource.UsuarioRemoteDataSource
 import com.orlo.app.data.dtos.RegistrarUsuarioDto
 import com.orlo.app.data.dtos.toActualizarPerfilDto
 import com.orlo.app.data.dtos.toPerfilUi
 import com.orlo.app.data.dtos.toResultadoFirestoreDto
 import com.orlo.app.data.dtos.toResultadoUi
+import com.orlo.app.data.model.EstadoLeccion
 import com.orlo.app.data.model.PerfilUi
 import com.orlo.app.data.model.ResultadoUi
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 // El perfil del usuario y sus resultados del cuestionario. Todo se lee y se escribe con el uid de la
 // sesion: la app nunca pide datos de otro usuario
 class UsuarioRepository @Inject constructor(
     private val usuarioRemoteDataSource: UsuarioRemoteDataSource,
+    private val storageRemoteDataSource: StorageRemoteDataSource,
+    private val imagenLocalDataSource: ImagenLocalDataSource,
     private val authRemoteDataSource: AuthRemoteDataSource,
 ) {
 
@@ -46,6 +54,36 @@ class UsuarioRepository @Inject constructor(
             Result.failure(errorDe(e))
         }
     }
+
+    // En vivo: el nombre, la foto, el estilo y el contador de prendas que mantiene la Cloud Function
+    fun observarPerfil(): Flow<Result<PerfilUi>> =
+        authRemoteDataSource.enVivo("UsuarioRepository") { uid ->
+            usuarioRemoteDataSource.observarUsuario(uid).map { it?.toPerfilUi() ?: throw ContenidoNoEncontradoException() }
+        }
+
+    // Una sola foto por usuario: la nueva reemplaza la anterior en la misma ruta. La URL lleva la
+    // fecha para que la app no muestre la foto vieja que tenia guardada
+    suspend fun cambiarFoto(foto: Uri, fecha: Long): Result<String> {
+        return try {
+            val uid = authRemoteDataSource.uidOError()
+            val bytes = imagenLocalDataSource.comprimir(foto) ?: throw ErrorAlSubirImagenException()
+            val url = storageRemoteDataSource.uploadImage(rutaFotoDePerfil(uid), bytes) + "&v=$fecha"
+            usuarioRemoteDataSource.actualizarFoto(uid, url)
+            authRemoteDataSource.actualizarFoto(url)
+            Result.success(url)
+        } catch (e: Exception) {
+            Log.d("UsuarioRepository", "cambiarFoto: ${e.message}")
+            Result.failure(errorDe(e))
+        }
+    }
+
+    // Cuantas lecciones lleva completadas, en vivo, para el resumen de Mi cuenta. Solo lee Firestore
+    fun observarLeccionesCompletadas(): Flow<Result<Int>> =
+        authRemoteDataSource.enVivo("UsuarioRepository") { uid ->
+            usuarioRemoteDataSource.observarProgresoLecciones(uid).map { progreso ->
+                progreso.count { it.status == EstadoLeccion.COMPLETADA.codigo }
+            }
+        }
 
     suspend fun guardarPerfil(perfil: PerfilUi): Result<Unit> {
         return try {
@@ -82,3 +120,7 @@ class UsuarioRepository @Inject constructor(
         }
     }
 }
+
+const val CARPETA_FOTOS_PERFIL = "profileImages"
+
+fun rutaFotoDePerfil(uid: String) = "$CARPETA_FOTOS_PERFIL/$uid.jpg"

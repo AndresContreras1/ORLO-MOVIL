@@ -4,12 +4,15 @@ import com.orlo.app.data.dtos.GuardarOutfitDto
 import com.orlo.app.data.dtos.GuardarPrendaDto
 import com.orlo.app.data.dtos.OutfitFirestoreDto
 import com.orlo.app.data.dtos.PrendaFirestoreDto
+import kotlinx.coroutines.flow.Flow
 
 // Contrato del armario digital: prendas y outfits de un usuario. Crear o actualizar lo decide el
 // repositorio; el data source solo ejecuta la consulta
 interface ArmarioRemoteDataSource {
 
     suspend fun getPrendas(userId: String): List<PrendaFirestoreDto>
+    // En vivo: la lista llega de nuevo con cada prenda que se crea, cambia o borra
+    fun observarPrendas(userId: String): Flow<List<PrendaFirestoreDto>>
 
     suspend fun getPrenda(userId: String, prendaId: String): PrendaFirestoreDto?
 
@@ -24,6 +27,7 @@ interface ArmarioRemoteDataSource {
     suspend fun borrarPrenda(userId: String, prendaId: String): Unit
 
     suspend fun getOutfits(userId: String): List<OutfitFirestoreDto>
+    fun observarOutfits(userId: String): Flow<List<OutfitFirestoreDto>>
 
     suspend fun getOutfit(userId: String, outfitId: String): OutfitFirestoreDto?
 

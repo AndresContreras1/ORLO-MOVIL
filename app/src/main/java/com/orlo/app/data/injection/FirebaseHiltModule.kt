@@ -5,6 +5,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.messaging
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.storage
 import dagger.Module
@@ -30,4 +32,8 @@ class FirebaseHiltModule {
     @Provides
     @Singleton
     fun storage(): FirebaseStorage = Firebase.storage
+
+    @Provides
+    @Singleton
+    fun messaging(): FirebaseMessaging = Firebase.messaging
 }

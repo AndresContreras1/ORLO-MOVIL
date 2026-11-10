@@ -6,8 +6,11 @@ import com.orlo.app.data.datasource.ConversacionRemoteDataSource
 import com.orlo.app.data.dtos.ConversacionFirestoreDto
 import com.orlo.app.data.dtos.GuardarMensajeDto
 import com.orlo.app.data.dtos.MensajeFirestoreDto
-import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 
 class ConversacionFirestoreDataSourceImpl @Inject constructor(
     private val db: FirebaseFirestore
@@ -24,6 +27,21 @@ class ConversacionFirestoreDataSourceImpl @Inject constructor(
         return respuesta.documents.mapNotNull { doc ->
             doc.toObject(ConversacionFirestoreDto::class.java)?.copy(id = doc.id)
         }
+    }
+
+    override fun observarConversaciones(userId: String): Flow<List<ConversacionFirestoreDto>> = callbackFlow {
+        val listener = conversaciones(userId)
+            .orderBy("updatedAt", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                trySend(snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(ConversacionFirestoreDto::class.java)?.copy(id = doc.id)
+                }.orEmpty())
+            }
+        awaitClose { listener.remove() }
     }
 
     override suspend fun getMensajes(userId: String, conversacionId: String): List<MensajeFirestoreDto> {

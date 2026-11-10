@@ -2,6 +2,7 @@ package com.orlo.app.data.repository
 
 import android.net.Uri
 import android.util.Log
+import com.google.firebase.storage.StorageException
 import com.orlo.app.data.datasource.ArmarioRemoteDataSource
 import com.orlo.app.data.datasource.AuthRemoteDataSource
 import com.orlo.app.data.datasource.ImagenLocalDataSource
@@ -15,8 +16,9 @@ import com.orlo.app.data.model.OrigenOutfit
 import com.orlo.app.data.model.OutfitPropuestoUi
 import com.orlo.app.data.model.OutfitUi
 import com.orlo.app.data.model.PrendaUi
-import com.google.firebase.storage.StorageException
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 // El armario digital: prendas con foto y outfits. Las fotos se comprimen y suben a Storage; la URL
 // queda guardada en el documento de la prenda. Si es crear o actualizar lo decide este repositorio
@@ -37,6 +39,12 @@ class ArmarioRepository @Inject constructor(
             Result.failure(errorDe(e))
         }
     }
+
+    // En vivo: las pantallas no recargan despues de guardar, borrar o marcar favorita
+    fun observarPrendas(): Flow<Result<List<PrendaUi>>> =
+        authRemoteDataSource.enVivo("ArmarioRepository") { uid ->
+            armarioRemoteDataSource.observarPrendas(uid).map { lista -> lista.map { it.toPrendaUi() } }
+        }
 
     suspend fun getPrenda(prendaId: String): Result<PrendaUi> {
         return try {
@@ -113,6 +121,11 @@ class ArmarioRepository @Inject constructor(
             Result.failure(errorDe(e))
         }
     }
+
+    fun observarOutfits(): Flow<Result<List<OutfitUi>>> =
+        authRemoteDataSource.enVivo("ArmarioRepository") { uid ->
+            armarioRemoteDataSource.observarOutfits(uid).map { lista -> lista.map { it.toOutfitUi() } }
+        }
 
     suspend fun getOutfit(outfitId: String): Result<OutfitUi> {
         return try {

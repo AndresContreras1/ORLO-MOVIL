@@ -10,9 +10,14 @@ import com.orlo.app.data.dtos.toLeccionUi
 import com.orlo.app.data.model.EstadoLeccion
 import com.orlo.app.data.model.LeccionResumenUi
 import com.orlo.app.data.model.LeccionUi
+import javax.inject.Inject
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
 // Une dos fuentes: las lecciones vienen del backend y el avance de cada una de Firestore
 class LeccionRepository @Inject constructor(
@@ -48,6 +53,31 @@ class LeccionRepository @Inject constructor(
             Log.d("LeccionRepository", "getLecciones: ${e.message}")
             Result.failure(errorDe(e))
         }
+    }
+
+    // Las lecciones se piden una vez al backend y el avance queda escuchando Firestore: al
+    // completar una leccion, la lista cambia sola. Si el avance falla, se ven todas sin empezar
+    fun observarLecciones(): Flow<Result<List<LeccionResumenUi>>> = flow {
+        val uid = authRemoteDataSource.uidOError()
+        val lecciones = leccionRemoteDataSource.getLecciones()
+        emitAll(
+            usuarioRemoteDataSource.observarProgresoLecciones(uid)
+                .catch { e ->
+                    Log.d("LeccionRepository", "observarLecciones (avance): ${e.message}")
+                    emit(emptyList())
+                }
+                .map { progreso ->
+                    val avance = progreso.associate { it.lessonId.toString() to EstadoLeccion.desdeCodigo(it.status) }
+                    Result.success(
+                        lecciones
+                            .map { it.toLeccionResumenUi(avance[it.id ?: ""] ?: EstadoLeccion.SIN_EMPEZAR) }
+                            .sortedBy { it.orden }
+                    )
+                }
+        )
+    }.catch { e ->
+        Log.d("LeccionRepository", "observarLecciones: ${e.message}")
+        emit(Result.failure(errorDe(e)))
     }
 
     suspend fun getLeccion(id: String): Result<LeccionUi> {

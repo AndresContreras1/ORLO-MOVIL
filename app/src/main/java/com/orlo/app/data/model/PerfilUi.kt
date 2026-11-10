@@ -16,6 +16,8 @@ data class PerfilUi(
     val ocasiones: List<String> = emptyList(),
     val consentimientoDatosSensibles: Boolean = false,
     val resultadoActual: ResultadoUi? = null,
+    val fotoUrl: String? = null,
+    val cantidadPrendas: Int = 0,
 ) {
     val tieneColorimetria: Boolean
         get() = consentimientoDatosSensibles &&

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- La camara guarda la foto en la cache de la app; de ahi se comprime y se sube -->
+<paths>
+    <cache-path name="fotos" path="fotos/" />
+</paths>

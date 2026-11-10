@@ -45,4 +45,9 @@ sealed class Screen(val route: String) {
     }
 
     data object Account : Screen(route = "account")
+
+    // Una prenda del catalogo de Explora
+    data object ExploreItem : Screen(route = "exploreItem/{itemId}") {
+        fun createRoute(itemId: String) = "exploreItem/$itemId"
+    }
 }
