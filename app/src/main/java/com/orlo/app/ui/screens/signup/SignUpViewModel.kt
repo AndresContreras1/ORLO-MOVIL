@@ -73,9 +73,8 @@ class SignUpViewModel @Inject constructor(
             return
         }
 
+        _uiState.update { it.copy(cargando = true, errorMessageRes = null) }
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(cargando = true, errorMessageRes = null) }
-
             // Si un intento anterior ya creo la cuenta pero fallo el documento, no se vuelve a crear
             val cuenta = if (authRepository.haySesion) {
                 Result.success(Unit)

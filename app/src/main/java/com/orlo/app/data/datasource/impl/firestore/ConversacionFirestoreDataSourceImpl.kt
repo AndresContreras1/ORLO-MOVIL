@@ -4,6 +4,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.orlo.app.data.datasource.ConversacionRemoteDataSource
 import com.orlo.app.data.dtos.ConversacionFirestoreDto
+import com.orlo.app.data.dtos.GuardarMensajeDto
 import com.orlo.app.data.dtos.MensajeFirestoreDto
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -14,12 +15,6 @@ class ConversacionFirestoreDataSourceImpl @Inject constructor(
 
     private fun conversaciones(userId: String) =
         db.collection(USERS).document(userId).collection(CONVERSATIONS)
-
-    override suspend fun crearConversacion(userId: String, titulo: String, fecha: Long): String {
-        val ref = conversaciones(userId).document()
-        ref.set(ConversacionFirestoreDto(id = ref.id, title = titulo, updatedAt = fecha)).await()
-        return ref.id
-    }
 
     override suspend fun getConversaciones(userId: String): List<ConversacionFirestoreDto> {
         val respuesta = conversaciones(userId)
@@ -41,26 +36,39 @@ class ConversacionFirestoreDataSourceImpl @Inject constructor(
         }
     }
 
-    override suspend fun agregarMensaje(
+    // O se guardan la conversacion y los dos mensajes, o nada: una pregunta nunca queda sin respuesta
+    override suspend fun guardarIntercambio(
         userId: String,
-        conversacionId: String,
-        mensaje: MensajeFirestoreDto
-    ) {
-        val conversacionRef = conversaciones(userId).document(conversacionId)
-        val mensajeRef = conversacionRef.collection(MESSAGES).document()
+        conversacionId: String?,
+        titulo: String,
+        pregunta: GuardarMensajeDto,
+        respuesta: GuardarMensajeDto,
+    ): String {
+        val conversacionRef = if (conversacionId == null) {
+            conversaciones(userId).document()
+        } else {
+            conversaciones(userId).document(conversacionId)
+        }
+        val mensajes = conversacionRef.collection(MESSAGES)
+        val batch = db.batch()
 
-        db.batch()
-            .set(mensajeRef, mensaje.copy(id = mensajeRef.id))
-            .update(conversacionRef, mapOf("updatedAt" to mensaje.createdAt))
-            .commit()
-            .await()
+        if (conversacionId == null) {
+            batch.set(conversacionRef, mapOf("title" to titulo, "updatedAt" to respuesta.createdAt))
+        } else {
+            batch.update(conversacionRef, mapOf("updatedAt" to respuesta.createdAt))
+        }
+        batch.set(mensajes.document(), pregunta)
+        batch.set(mensajes.document(), respuesta)
+        batch.commit().await()
+
+        return conversacionRef.id
     }
 
     // Primero los mensajes (la subcoleccion no se borra sola) y despues la conversacion
-    override suspend fun borrarConversacion(userId: String, conversacionId: String) {
+    override suspend fun borrarConversacion(userId: String, conversacionId: String): Unit {
         val conversacionRef = conversaciones(userId).document(conversacionId)
         val mensajes = conversacionRef.collection(MESSAGES).get().await()
-        mensajes.documents.chunked(499).forEach { parte ->
+        mensajes.documents.chunked(MAX_BATCH - 1).forEach { parte ->
             val batch = db.batch()
             parte.forEach { batch.delete(it.reference) }
             batch.commit().await()

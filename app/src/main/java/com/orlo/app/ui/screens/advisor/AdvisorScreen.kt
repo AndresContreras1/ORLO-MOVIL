@@ -35,12 +35,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import android.content.res.Configuration
 import android.widget.Toast
 import com.orlo.app.R
+import com.orlo.app.data.local.LocalPreviewProvider
 import com.orlo.app.data.model.AccionRapida
-import com.orlo.app.data.model.CuentaUi
 import com.orlo.app.data.model.MensajeChatUi
 import com.orlo.app.data.model.RolMensaje
+import com.orlo.app.data.repository.AsesorRepository
 import com.orlo.app.ui.screens.advisor.components.BurbujaDeMensaje
 import com.orlo.app.ui.theme.OrloTheme
 import com.orlo.app.ui.utils.ErrorBox
@@ -180,14 +182,10 @@ fun AdvisorScreenContent(
                 }
             }
             itemsIndexed(state.mensajes, key = { indice, mensaje -> mensaje.id.ifBlank { "m$indice" } }) { indice, mensaje ->
-                val guardados = state.outfitsGuardados
-                    .filter { it.startsWith("${mensaje.id}-") }
-                    .mapNotNull { it.substringAfterLast("-").toIntOrNull() }
-                    .toSet()
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     BurbujaDeMensaje(
                         mensaje = mensaje,
-                        guardados = guardados,
+                        guardados = state.guardadosDe(mensaje.id),
                         onGuardarOutfit = { onGuardarOutfit(mensaje, it) },
                     )
                     // Los botones rapidos solo debajo de la ultima respuesta
@@ -247,6 +245,12 @@ fun AdvisorScreenContent(
                         Text(text = stringResource(if (state.sinMensajes) R.string.sin_mensajes_hoy else R.string.escribe_tu_duda))
                     },
                     enabled = !state.sinMensajes,
+                    // Cerca del tope de caracteres se muestra cuantos lleva
+                    supportingText = if (state.texto.length > LIMITE_VISIBLE) {
+                        { Text(text = "${state.texto.length} / ${AsesorRepository.MAX_TEXTO}") }
+                    } else {
+                        null
+                    },
                     maxLines = 4,
                     shape = MaterialTheme.shapes.large,
                     modifier = Modifier
@@ -265,12 +269,26 @@ fun AdvisorScreenContent(
     }
 }
 
+private const val LIMITE_VISIBLE = 900
+
 @Composable
 @Preview(showBackground = true, widthDp = 393, heightDp = 852)
 fun AdvisorScreenPreview() {
     OrloTheme {
         AdvisorScreenContent(
-            state = AdvisorState(isLoading = false, cuenta = CuentaUi(premium = true, limiteDiario = 20, mensajesRestantes = 2)),
+            state = AdvisorState(isLoading = false, cuenta = LocalPreviewProvider.cuenta.copy(mensajesRestantes = 2)),
+            onTextoChange = {}, onEnviar = {}, onEjemplo = {}, onAccion = {}, onReintentar = {},
+            onNuevaConversacion = {}, onGuardarOutfit = { _, _ -> },
+        )
+    }
+}
+
+@Composable
+@Preview(showBackground = true, widthDp = 393, heightDp = 852, uiMode = Configuration.UI_MODE_NIGHT_YES)
+fun AdvisorScreenConMensajesPreview() {
+    OrloTheme {
+        AdvisorScreenContent(
+            state = AdvisorState(isLoading = false, cuenta = LocalPreviewProvider.cuenta, mensajes = LocalPreviewProvider.mensajes),
             onTextoChange = {}, onEnviar = {}, onEjemplo = {}, onAccion = {}, onReintentar = {},
             onNuevaConversacion = {}, onGuardarOutfit = { _, _ -> },
         )

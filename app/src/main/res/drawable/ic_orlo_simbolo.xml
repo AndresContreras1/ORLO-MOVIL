@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- El simbolo de ORLO para dentro de la app. El color lo pone la pantalla con el del tema, asi
+     cambia solo en modo oscuro -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="80dp"
+    android:viewportWidth="64"
+    android:viewportHeight="80">
+    <group android:translateX="-22" android:translateY="-15">
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M54,40a24,24 0,1 1,0 48a24,24 0,1 1,0 -48z"
+            android:strokeWidth="9"
+            android:strokeColor="#FF000000" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M54,40 V36 C54,32 59.5,31 59.5,26.5 C59.5,23.4 57,21 54,21 C51,21 48.5,23.2 48.5,26"
+            android:strokeWidth="5"
+            android:strokeColor="#FF000000"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>

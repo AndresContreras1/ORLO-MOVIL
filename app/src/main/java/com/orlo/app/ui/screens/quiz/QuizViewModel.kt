@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orlo.app.R
 import com.orlo.app.data.injection.IoDispatcher
+import com.orlo.app.data.repository.CuestionarioCambioException
 import com.orlo.app.data.repository.CuestionarioRepository
 import com.orlo.app.data.repository.UsuarioRepository
 import com.orlo.app.ui.utils.mensajeDeError
@@ -55,7 +56,7 @@ class QuizViewModel @Inject constructor(
     }
 
     // En las preguntas de una opcion, elegir otra reemplaza la anterior; en las de varias, alterna
-    fun seleccionarOpcion(opcionId: Long) {
+    fun seleccionarOpcion(opcionId: String) {
         val pregunta = _uiState.value.preguntaActual ?: return
         _uiState.update { estado ->
             val actuales = estado.respuestas[pregunta.id] ?: emptySet()
@@ -88,16 +89,18 @@ class QuizViewModel @Inject constructor(
     private fun enviar() {
         if (_uiState.value.enviando) return
 
+        _uiState.update { it.copy(enviando = true, errorMessageRes = null) }
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(enviando = true, errorMessageRes = null) }
-
             val fecha = System.currentTimeMillis()
             val calculo = cuestionarioRepository.puntuar(_uiState.value.respuestas, fecha)
             if (calculo.isFailure) {
-                Log.d("QuizViewModel", calculo.exceptionOrNull()?.message.toString())
+                val error = calculo.exceptionOrNull()
+                Log.d("QuizViewModel", error?.message.toString())
                 _uiState.update {
-                    it.copy(enviando = false, errorMessageRes = mensajeDeError(calculo.exceptionOrNull(), R.string.error_calcular_resultado))
+                    it.copy(enviando = false, errorMessageRes = mensajeDeError(error, R.string.error_calcular_resultado))
                 }
+                // Los fundadores editaron el cuestionario mientras se respondia: se carga el nuevo
+                if (error is CuestionarioCambioException) cargarCuestionario()
                 return@launch
             }
 

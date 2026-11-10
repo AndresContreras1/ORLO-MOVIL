@@ -26,7 +26,7 @@ app/src/main/java/com/orlo/app
 
 Flujo: `Screen → ViewModel → Repository → DataSource → Firebase / backend`. Las pantallas reciben lambdas y solo `AppNavigation` navega. Cada ViewModel expone un `StateFlow` con su estado (`isLoading`, `errorMessageRes` y los datos).
 
-Los datos privados del usuario viven en Firestore bajo `users/{uid}` y las fotos de las prendas en Storage bajo `garmentImages/{uid}/`. Las reglas de seguridad están en `firebase/`.
+Los datos privados del usuario viven en Firestore bajo `users/{uid}` y las fotos en Storage (`garmentImages/{uid}/` y `profileImages/`). Firebase es compartido con la web: las reglas, las Cloud Functions, el seed y el modelo de datos (`docs/modelo-de-datos.md`) están en [ORLO-WEB](https://github.com/AndresContreras1/ORLO-WEB), carpeta `firebase/`.
 
 ## Requisitos
 
@@ -36,16 +36,17 @@ Los datos privados del usuario viven en Firestore bajo `users/{uid}` y las fotos
 
 ## Cómo correrla en desarrollo
 
-1. Emulador de Firebase (Auth 9099, Firestore 8080, Storage 9199, interfaz en http://localhost:4000), desde la raíz del repositorio:
+1. Emulador de Firebase (Auth 9099, Firestore 8080, Storage 9199, Functions 5001, interfaz en http://localhost:4000), desde `ORLO-WEB/firebase`:
    ```bash
-   firebase emulators:start --project demo-orlo
+   cd functions && npm install && cd .. && firebase emulators:start --project demo-orlo
    ```
 2. Backend de ORLO-WEB en el puerto 8090 (ver su README).
-3. Abrir el proyecto en Android Studio y correr `app` en el emulador de Android.
+3. Datos de prueba con prendas reales, desde `ORLO-WEB/firebase/seed`: `npm install && npm run seed`. Crea, entre otras, la cuenta `laura.prueba@orlo.test` con contraseña `Prueba2026`.
+4. Abrir el proyecto en Android Studio y correr `app` en el emulador de Android.
 
 En `debug` la app usa el emulador de Firebase y el backend del computador (`10.0.2.2` desde el emulador de Android). El `google-services.json` del repositorio es del proyecto de prueba `demo-orlo`: solo sirve con el emulador.
 
-Para probar las funciones premium, activa el premium del usuario desde el panel de administración de ORLO-WEB.
+En desarrollo el backend corre con `ORLO_PREMIUM_PARA_TODOS=true`: todas las funciones están abiertas para cualquier cuenta.
 
 ## Pruebas
 
@@ -65,7 +66,7 @@ Integración de los data sources contra el emulador de Firebase y prueba e2e del
 
 1. Crear el proyecto en la consola de Firebase con Authentication (correo y contraseña), Firestore y Storage.
 2. Registrar la app Android con el paquete `com.orlo.app` y reemplazar `app/google-services.json`.
-3. Publicar las reglas: `firebase deploy --only firestore:rules,storage --project <id-del-proyecto>`.
+3. Publicar las reglas y las funciones desde `ORLO-WEB/firebase`: `firebase deploy --project <id-del-proyecto>`.
 4. Cambiar `API_BASE_URL` del tipo `release` en `app/build.gradle.kts` por la dirección del backend publicado.
 
 ## Piezas fuera de la arquitectura base

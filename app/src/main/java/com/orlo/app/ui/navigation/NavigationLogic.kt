@@ -1,7 +1,8 @@
 package com.orlo.app.ui.navigation
 
-// Decide en que rutas se ve la barra de abajo: solo en las cinco secciones principales. Para la del
-// asesor se compara sin los argumentos opcionales
+// Decide en que rutas se ve la barra de abajo: solo en las cinco secciones principales. La ruta que
+// llega es el patron del destino ("advisor?conversationId={conversationId}"), asi que el asesor
+// coincide con o sin conversacion abierta
 object NavigationLogic {
 
     private val bottomBarScreens = listOf(

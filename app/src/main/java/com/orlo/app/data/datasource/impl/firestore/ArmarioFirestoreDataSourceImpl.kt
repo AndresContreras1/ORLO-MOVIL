@@ -3,6 +3,8 @@ package com.orlo.app.data.datasource.impl.firestore
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.orlo.app.data.datasource.ArmarioRemoteDataSource
+import com.orlo.app.data.dtos.GuardarOutfitDto
+import com.orlo.app.data.dtos.GuardarPrendaDto
 import com.orlo.app.data.dtos.OutfitFirestoreDto
 import com.orlo.app.data.dtos.PrendaFirestoreDto
 import kotlinx.coroutines.tasks.await
@@ -31,13 +33,15 @@ class ArmarioFirestoreDataSourceImpl @Inject constructor(
 
     override fun nuevoIdDePrenda(userId: String): String = prendas(userId).document().id
 
-    override suspend fun guardarPrenda(userId: String, prenda: PrendaFirestoreDto): String {
-        val ref = if (prenda.id.isBlank()) prendas(userId).document() else prendas(userId).document(prenda.id)
-        ref.set(prenda.copy(id = ref.id)).await()
-        return ref.id
+    override suspend fun guardarPrenda(userId: String, prendaId: String, prenda: GuardarPrendaDto): Unit {
+        prendas(userId).document(prendaId).set(prenda).await()
     }
 
-    override suspend fun borrarPrenda(userId: String, prendaId: String) {
+    override suspend fun marcarPrendaFavorita(userId: String, prendaId: String, favorita: Boolean): Unit {
+        prendas(userId).document(prendaId).update(mapOf("favorite" to favorita)).await()
+    }
+
+    override suspend fun borrarPrenda(userId: String, prendaId: String): Unit {
         prendas(userId).document(prendaId).delete().await()
     }
 
@@ -53,17 +57,21 @@ class ArmarioFirestoreDataSourceImpl @Inject constructor(
         return respuesta.toObject(OutfitFirestoreDto::class.java)?.copy(id = respuesta.id)
     }
 
-    override suspend fun guardarOutfit(userId: String, outfit: OutfitFirestoreDto): String {
-        val ref = if (outfit.id.isBlank()) outfits(userId).document() else outfits(userId).document(outfit.id)
-        ref.set(outfit.copy(id = ref.id)).await()
+    override suspend fun crearOutfit(userId: String, outfit: GuardarOutfitDto): String {
+        val ref = outfits(userId).document()
+        ref.set(outfit).await()
         return ref.id
     }
 
-    override suspend fun marcarFavorito(userId: String, outfitId: String, favorito: Boolean) {
+    override suspend fun actualizarOutfit(userId: String, outfitId: String, outfit: GuardarOutfitDto): Unit {
+        outfits(userId).document(outfitId).set(outfit).await()
+    }
+
+    override suspend fun marcarOutfitFavorito(userId: String, outfitId: String, favorito: Boolean): Unit {
         outfits(userId).document(outfitId).update(mapOf("favorite" to favorito)).await()
     }
 
-    override suspend fun borrarOutfit(userId: String, outfitId: String) {
+    override suspend fun borrarOutfit(userId: String, outfitId: String): Unit {
         outfits(userId).document(outfitId).delete().await()
     }
 }

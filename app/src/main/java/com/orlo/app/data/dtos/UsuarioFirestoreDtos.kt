@@ -14,8 +14,26 @@ data class RegistrarUsuarioDto(
     val createdAt: Long = 0,
 )
 
+// Los campos del perfil que el usuario puede editar. Sin consentimiento, los datos de apariencia
+// se guardan vacios (se borran)
+data class ActualizarPerfilDto(
+    val name: String = "",
+    val ageRange: String = "",
+    val garmentPronoun: String = "",
+    val bodyType: String = "",
+    val skinTone: String = "",
+    val hairColor: String = "",
+    val eyeColor: String = "",
+    val climate: String = "",
+    val budget: String = "",
+    val occasions: List<String> = emptyList(),
+    val sensitiveDataConsent: Boolean = false,
+)
+
 // Copia del estilo que se muestra en la app (desnormalizacion): asi el resultado se ve aunque el
 // backend cambie despues la descripcion del estilo
+// En Firestore los ids del contenido del backend van como numero, igual que los escriben la web y
+// el seed; en la app se manejan como texto
 data class EstiloFirestoreDto(
     val id: Long = 0,
     val code: String = "",
@@ -32,6 +50,7 @@ data class ResultadoFirestoreDto(
     val createdAt: Long = 0,
 )
 
+// Lo que se lee del documento del usuario
 data class UsuarioFirestoreDto(
     val id: String = "",
     val name: String = "",
@@ -51,7 +70,7 @@ data class UsuarioFirestoreDto(
 )
 
 fun EstiloUi.toEstiloFirestoreDto(): EstiloFirestoreDto = EstiloFirestoreDto(
-    id = id,
+    id = id.toLongOrNull() ?: 0,
     code = code,
     name = nombre,
     description = descripcion,
@@ -60,7 +79,7 @@ fun EstiloUi.toEstiloFirestoreDto(): EstiloFirestoreDto = EstiloFirestoreDto(
 )
 
 fun EstiloFirestoreDto.toEstiloUi(): EstiloUi = EstiloUi(
-    id = id,
+    id = if (id == 0L) "" else id.toString(),
     code = code,
     nombre = name,
     descripcion = description,
@@ -98,22 +117,22 @@ fun UsuarioFirestoreDto.toPerfilUi(): PerfilUi = PerfilUi(
     resultadoActual = currentResult?.takeIf { it.primary.code.isNotBlank() }?.toResultadoUi(),
 )
 
-// Los campos del perfil que se actualizan con update(): sin consentimiento, los datos de
-// apariencia se borran
-fun PerfilUi.toCamposDePerfil(): Map<String, Any> = mapOf(
-    "name" to nombre.trim(),
-    "ageRange" to rangoEdad,
-    "garmentPronoun" to tratoPrendas,
-    "bodyType" to if (consentimientoDatosSensibles) tipoCuerpo else "",
-    "skinTone" to if (consentimientoDatosSensibles) tonoPiel else "",
-    "hairColor" to if (consentimientoDatosSensibles) colorCabello else "",
-    "eyeColor" to if (consentimientoDatosSensibles) colorOjos else "",
-    "climate" to clima,
-    "budget" to presupuesto,
-    "occasions" to ocasiones,
-    "sensitiveDataConsent" to consentimientoDatosSensibles,
+// Sin consentimiento, los datos de apariencia se guardan vacios
+fun PerfilUi.toActualizarPerfilDto(): ActualizarPerfilDto = ActualizarPerfilDto(
+    name = nombre.trim(),
+    ageRange = rangoEdad,
+    garmentPronoun = tratoPrendas,
+    bodyType = if (consentimientoDatosSensibles) tipoCuerpo else "",
+    skinTone = if (consentimientoDatosSensibles) tonoPiel else "",
+    hairColor = if (consentimientoDatosSensibles) colorCabello else "",
+    eyeColor = if (consentimientoDatosSensibles) colorOjos else "",
+    climate = clima,
+    budget = presupuesto,
+    occasions = ocasiones,
+    sensitiveDataConsent = consentimientoDatosSensibles,
 )
 
+// El id del documento es el id de la leccion: una sola entrada de avance por leccion
 data class ProgresoLeccionFirestoreDto(
     val lessonId: Long = 0,
     val status: String = "",

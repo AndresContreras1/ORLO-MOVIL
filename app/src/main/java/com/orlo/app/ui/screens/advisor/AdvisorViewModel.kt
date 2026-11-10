@@ -7,16 +7,11 @@ import com.orlo.app.R
 import com.orlo.app.data.injection.IoDispatcher
 import com.orlo.app.data.model.AccionRapida
 import com.orlo.app.data.model.MensajeChatUi
-import com.orlo.app.data.model.OpcionesDelPerfil
-import com.orlo.app.data.model.PerfilUi
-import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.model.RolMensaje
 import com.orlo.app.data.repository.ArmarioRepository
 import com.orlo.app.data.repository.AsesorRepository
-import com.orlo.app.data.repository.ContextoAsesor
 import com.orlo.app.data.repository.CuentaRepository
 import com.orlo.app.data.repository.LimiteAlcanzadoException
-import com.orlo.app.data.repository.UsuarioRepository
 import com.orlo.app.ui.utils.mensajeDeError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
@@ -30,13 +25,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// El chat con el asesor: recibe una duda, envia la pregunta con el perfil y las prendas del armario,
-// y muestra 2 o 3 outfits que se pueden guardar
+// El chat con el asesor: recibe una duda, la envia y muestra 2 o 3 outfits que se pueden guardar.
+// Lo que el asesor sabe del usuario (perfil y armario) lo arma el repositorio
 @HiltViewModel
 class AdvisorViewModel @Inject constructor(
     private val asesorRepository: AsesorRepository,
     private val cuentaRepository: CuentaRepository,
-    private val usuarioRepository: UsuarioRepository,
     private val armarioRepository: ArmarioRepository,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
@@ -44,26 +38,20 @@ class AdvisorViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AdvisorState())
     val uiState: StateFlow<AdvisorState> = _uiState.asStateFlow()
 
-    // La cuenta, el perfil, las prendas y (si viene del historial) la conversacion son
-    // independientes: se piden al tiempo
+    // La cuenta y (si viene del historial) la conversacion son independientes: se piden al tiempo
     fun cargar(conversacionId: String?) {
+        _uiState.update { it.copy(isLoading = it.cuenta == null, errorCargaRes = null) }
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(isLoading = true, errorCargaRes = null) }
-
             coroutineScope {
                 val cuentaAsync = async { cuentaRepository.getCuenta() }
-                val perfilAsync = async { usuarioRepository.getPerfil() }
-                val prendasAsync = async { armarioRepository.getPrendas() }
                 val mensajesAsync = async {
                     if (conversacionId == null) Result.success(emptyList()) else asesorRepository.getMensajes(conversacionId)
                 }
 
                 val cuenta = cuentaAsync.await()
-                val perfil = perfilAsync.await()
-                val prendas = prendasAsync.await()
                 val mensajes = mensajesAsync.await()
 
-                // Sin la cuenta no se sabe si puede usar el asesor: es el unico error que bloquea
+                // Sin la cuenta no se sabe cuantos mensajes quedan: es el unico error que bloquea
                 if (cuenta.isFailure) {
                     Log.d("AdvisorViewModel", cuenta.exceptionOrNull()?.message.toString())
                     _uiState.update {
@@ -74,12 +62,14 @@ class AdvisorViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             cuenta = cuenta.getOrNull(),
-                            perfil = perfil.getOrNull() ?: PerfilUi(),
-                            // Si fallan las prendas el asesor responde igual, sin el armario
-                            prendas = prendas.getOrNull() ?: emptyList(),
                             // Al volver a la pestana sin conversacion elegida, sigue la que estaba abierta
                             conversacionId = conversacionId ?: it.conversacionId,
                             mensajes = if (conversacionId == null) it.mensajes else mensajes.getOrNull() ?: emptyList(),
+                            errorMessageRes = if (mensajes.isFailure) {
+                                mensajeDeError(mensajes.exceptionOrNull(), R.string.error_cargar_asesor)
+                            } else {
+                                null
+                            },
                         )
                     }
                 }
@@ -87,8 +77,9 @@ class AdvisorViewModel @Inject constructor(
         }
     }
 
+    // El backend no acepta preguntas de mas de 1000 caracteres: el campo no deja pasar de ahi
     fun updateTexto(texto: String) {
-        _uiState.update { it.copy(texto = texto, errorMessageRes = null) }
+        _uiState.update { it.copy(texto = texto.take(AsesorRepository.MAX_TEXTO), errorMessageRes = null) }
     }
 
     fun enviar() {
@@ -133,7 +124,6 @@ class AdvisorViewModel @Inject constructor(
                 conversacionId = estado.conversacionId,
                 texto = texto,
                 accion = accion,
-                contexto = contextoDe(estado.perfil, estado.prendas),
                 historial = historial,
                 fecha = fecha,
             )
@@ -169,16 +159,23 @@ class AdvisorViewModel @Inject constructor(
     // Guarda en Mi armario un outfit que propuso el asesor
     fun guardarOutfit(mensaje: MensajeChatUi, indice: Int) {
         val outfit = mensaje.outfits.getOrNull(indice) ?: return
-        val clave = "${mensaje.id}-$indice"
+        val clave = AdvisorState.claveDeOutfit(mensaje.id, indice)
         if (clave in _uiState.value.outfitsGuardados) return
 
+        // Se marca de una vez para que dos toques seguidos no lo guarden dos veces
+        _uiState.update { it.copy(outfitsGuardados = it.outfitsGuardados + clave) }
         viewModelScope.launch(ioDispatcher) {
             val result = armarioRepository.guardarOutfitDelAsesor(outfit, System.currentTimeMillis())
             if (result.isSuccess) {
-                _uiState.update { it.copy(outfitsGuardados = it.outfitsGuardados + clave, avisoRes = R.string.outfit_guardado) }
+                _uiState.update { it.copy(avisoRes = R.string.outfit_guardado) }
             } else {
                 Log.d("AdvisorViewModel", result.exceptionOrNull()?.message.toString())
-                _uiState.update { it.copy(errorMessageRes = mensajeDeError(result.exceptionOrNull(), R.string.error_guardar_outfit)) }
+                _uiState.update {
+                    it.copy(
+                        outfitsGuardados = it.outfitsGuardados - clave,
+                        errorMessageRes = mensajeDeError(result.exceptionOrNull(), R.string.error_guardar_outfit),
+                    )
+                }
             }
         }
     }
@@ -186,20 +183,4 @@ class AdvisorViewModel @Inject constructor(
     fun avisoMostrado() {
         _uiState.update { it.copy(avisoRes = null) }
     }
-
-    // Lo que el asesor sabe del usuario, en palabras: nada de correo, apellidos ni identificadores
-    private fun contextoDe(perfil: PerfilUi, prendas: List<PrendaUi>): ContextoAsesor = ContextoAsesor(
-        nombre = perfil.nombre.split(" ").firstOrNull().orEmpty(),
-        rangoEdad = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.rangosDeEdad, perfil.rangoEdad),
-        tratoPrendas = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.tratoPrendas, perfil.tratoPrendas),
-        estiloPrincipal = perfil.resultadoActual?.principal?.nombre,
-        estiloSecundario = perfil.resultadoActual?.secundario?.nombre,
-        tonoPiel = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.tonosDePiel, perfil.tonoPiel),
-        colorCabello = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.coloresDeCabello, perfil.colorCabello),
-        colorOjos = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.coloresDeOjos, perfil.colorOjos),
-        clima = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.climas, perfil.clima),
-        presupuesto = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.presupuestos, perfil.presupuesto),
-        ocasiones = perfil.ocasiones.mapNotNull { OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.ocasiones, it) },
-        prendas = prendas.map { Triple(it.nombre, it.categoria.paraAsesor, it.color) },
-    )
 }

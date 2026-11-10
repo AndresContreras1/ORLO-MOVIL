@@ -23,16 +23,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class LessonsState(
-    val lecciones: List<LeccionResumenUi> = emptyList(),
-    val premium: Boolean = false,
-    val isLoading: Boolean = true,
-    @StringRes val errorMessageRes: Int? = null,
-) {
-    // El avance total, por ejemplo "3 de 6"
-    val completadas: Int get() = lecciones.count { it.estado == EstadoLeccion.COMPLETADA }
-}
-
 @HiltViewModel
 class LessonsViewModel @Inject constructor(
     private val leccionRepository: LeccionRepository,

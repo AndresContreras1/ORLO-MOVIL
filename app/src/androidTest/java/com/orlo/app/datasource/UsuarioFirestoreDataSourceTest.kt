@@ -5,6 +5,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import com.orlo.app.EmuladorDePrueba
 import com.orlo.app.data.datasource.impl.firestore.UsuarioFirestoreDataSourceImpl
+import com.orlo.app.data.dtos.ActualizarPerfilDto
 import com.orlo.app.data.dtos.EstiloFirestoreDto
 import com.orlo.app.data.dtos.ProgresoLeccionFirestoreDto
 import com.orlo.app.data.dtos.RegistrarUsuarioDto
@@ -85,5 +86,18 @@ class UsuarioFirestoreDataSourceTest {
         assertThat(dataSource.getUsuario(userId)).isNull()
         assertThat(dataSource.getResultados(userId)).isEmpty()
         assertThat(dataSource.getProgresoLecciones(userId)).isEmpty()
+    }
+
+    @Test
+    fun actualizarPerfil_conDatos_seMezclaSinBorrarElResultado() = runTest {
+        //Arrange
+        dataSource.guardarResultado(userId, ResultadoFirestoreDto(primary = EstiloFirestoreDto(code = "urbano", name = "Urbano")))
+        //Act
+        dataSource.actualizarPerfil(userId, ActualizarPerfilDto(name = "Laura Gómez", climate = "calido", occasions = listOf("universidad")))
+        //Assert
+        val usuario = dataSource.getUsuario(userId)
+        assertThat(usuario?.name).isEqualTo("Laura Gómez")
+        assertThat(usuario?.occasions).containsExactly("universidad")
+        assertThat(usuario?.currentResult?.primary?.code).isEqualTo("urbano")
     }
 }

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.orlo.app.R
 import com.orlo.app.ui.theme.OrloTheme
 import com.orlo.app.ui.utils.AppButton
+import com.orlo.app.ui.utils.AppPasswordField
 import com.orlo.app.ui.utils.AppTextField
 import com.orlo.app.ui.utils.ErrorMessage
 import com.orlo.app.ui.utils.ScreenTitle
@@ -94,14 +95,12 @@ fun LoginScreenContent(
             keyboardType = KeyboardType.Email,
             modifier = Modifier.testTag("txtEmail"),
         )
-        AppTextField(
+        AppPasswordField(
             value = contrasena,
             onValueChange = onContrasenaChange,
             label = stringResource(R.string.campo_contrasena),
-            keyboardType = KeyboardType.Password,
-            esContrasena = true,
-            contrasenaVisible = contrasenaVisible,
-            onContrasenaVisibleChange = onContrasenaVisibleChange,
+            visible = contrasenaVisible,
+            onVisibleChange = onContrasenaVisibleChange,
             modifier = Modifier.testTag("txtPassword"),
         )
         ErrorMessage(messageRes = errorMessageRes)

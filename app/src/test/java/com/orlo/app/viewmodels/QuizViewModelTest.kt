@@ -36,8 +36,8 @@ class QuizViewModelTest {
     private val cuestionario = CuestionarioUi(
         version = 1,
         preguntas = listOf(
-            PreguntaUi(id = 1, texto = "¿Qué usas más?", multiple = false, opciones = listOf(OpcionUi(10, "Jeans"), OpcionUi(11, "Vestidos"))),
-            PreguntaUi(id = 2, texto = "¿Qué colores usas?", multiple = true, opciones = listOf(OpcionUi(20, "Negro"), OpcionUi(21, "Azul"))),
+            PreguntaUi(id = "p1", texto = "¿Qué usas más?", multiple = false, opciones = listOf(OpcionUi("o10", "Jeans"), OpcionUi("o11", "Vestidos"))),
+            PreguntaUi(id = "p2", texto = "¿Qué colores usas?", multiple = true, opciones = listOf(OpcionUi("o20", "Negro"), OpcionUi("o21", "Azul"))),
         ),
     )
 
@@ -60,25 +60,25 @@ class QuizViewModelTest {
         //Arrange
         advanceUntilIdle()
         //Act
-        viewModel.seleccionarOpcion(10)
-        viewModel.seleccionarOpcion(11)
+        viewModel.seleccionarOpcion("o10")
+        viewModel.seleccionarOpcion("o11")
         //Assert
-        assertThat(viewModel.uiState.value.seleccionActual).containsExactly(11L)
+        assertThat(viewModel.uiState.value.seleccionActual).containsExactly("o11")
     }
 
     @Test
     fun seleccionarOpcion_preguntaDeVarias_alternaLasOpciones() = runTest {
         //Arrange
         advanceUntilIdle()
-        viewModel.seleccionarOpcion(10)
+        viewModel.seleccionarOpcion("o10")
         viewModel.siguiente()
         //Act
-        viewModel.seleccionarOpcion(20)
-        viewModel.seleccionarOpcion(21)
-        viewModel.seleccionarOpcion(20)
+        viewModel.seleccionarOpcion("o20")
+        viewModel.seleccionarOpcion("o21")
+        viewModel.seleccionarOpcion("o20")
         //Assert
         assertThat(viewModel.uiState.value.indice).isEqualTo(1)
-        assertThat(viewModel.uiState.value.seleccionActual).containsExactly(21L)
+        assertThat(viewModel.uiState.value.seleccionActual).containsExactly("o21")
     }
 
     @Test
@@ -99,15 +99,15 @@ class QuizViewModelTest {
         coEvery { cuestionarioRepository.puntuar(any(), any()) } returns Result.success(resultado)
         coEvery { usuarioRepository.guardarResultado(resultado) } returns Result.success(resultado.copy(id = "r1"))
         advanceUntilIdle()
-        viewModel.seleccionarOpcion(10)
+        viewModel.seleccionarOpcion("o10")
         viewModel.siguiente()
-        viewModel.seleccionarOpcion(21)
+        viewModel.seleccionarOpcion("o21")
         //Act
         viewModel.siguiente()
         advanceUntilIdle()
         //Assert
         assertThat(viewModel.uiState.value.navigate).isTrue()
-        coVerify { cuestionarioRepository.puntuar(mapOf(1L to setOf(10L), 2L to setOf(21L)), any()) }
+        coVerify { cuestionarioRepository.puntuar(mapOf("p1" to setOf("o10"), "p2" to setOf("o21")), any()) }
     }
 
     @Test

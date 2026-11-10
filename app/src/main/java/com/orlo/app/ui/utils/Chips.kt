@@ -11,7 +11,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.orlo.app.ui.theme.OrloTheme
 
 // Opciones que se eligen tocando: una o varias segun quien lo use. Cada opcion es codigo y texto.
 // Una fila que se desliza de lado cuando las opciones no caben en el ancho
@@ -44,3 +46,15 @@ fun coloresDeChip(): SelectableChipColors = FilterChipDefaults.filterChipColors(
     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
     selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
 )
+
+@Composable
+@Preview(showBackground = true)
+fun SelectorDeChipsPreview() {
+    OrloTheme {
+        SelectorDeChips(
+            opciones = listOf("trabajo" to "Trabajo", "universidad" to "Universidad", "salidas" to "Salidas"),
+            seleccion = setOf("universidad"),
+            onToggle = {},
+        )
+    }
+}

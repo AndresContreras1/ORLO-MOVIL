@@ -2,14 +2,12 @@ package com.orlo.app.ui.screens.garmentform
 
 import android.net.Uri
 import android.util.Log
-import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orlo.app.R
 import com.orlo.app.data.injection.IoDispatcher
 import com.orlo.app.data.model.CategoriaPrenda
 import com.orlo.app.data.model.MAX_NOMBRE_LENGTH
-import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.repository.ArmarioRepository
 import com.orlo.app.ui.utils.mensajeDeError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,18 +19,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-data class GarmentFormState(
-    val prenda: PrendaUi = PrendaUi(),
-    // La foto elegida en la galeria, todavia sin subir
-    val fotoNueva: Uri? = null,
-    val esNueva: Boolean = true,
-    val isLoading: Boolean = false,
-    @StringRes val errorMessageRes: Int? = null,
-    val guardando: Boolean = false,
-    val confirmarBorrado: Boolean = false,
-    val navigateBack: Boolean = false,
-)
 
 // Agregar o editar una prenda. Se puede subir una foto (opcion A) o elegir del catalogo generico
 // sin foto (opcion B): categoria, color y un nombre como "camiseta blanca"
@@ -52,14 +38,14 @@ class GarmentFormViewModel @Inject constructor(
             return
         }
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(isLoading = true, esNueva = false, errorMessageRes = null) }
+            _uiState.update { it.copy(isLoading = true, esNueva = false, errorCargaRes = null) }
             val result = armarioRepository.getPrenda(prendaId)
             if (result.isSuccess) {
                 _uiState.update { it.copy(isLoading = false, prenda = result.getOrThrow()) }
             } else {
                 Log.d("GarmentFormViewModel", result.exceptionOrNull()?.message.toString())
                 _uiState.update {
-                    it.copy(isLoading = false, errorMessageRes = mensajeDeError(result.exceptionOrNull(), R.string.error_cargar_prenda))
+                    it.copy(isLoading = false, errorCargaRes = mensajeDeError(result.exceptionOrNull(), R.string.error_cargar_prenda))
                 }
             }
         }
@@ -94,8 +80,8 @@ class GarmentFormViewModel @Inject constructor(
             return
         }
 
+        _uiState.update { it.copy(guardando = true, errorMessageRes = null) }
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(guardando = true, errorMessageRes = null) }
             val result = armarioRepository.guardarPrenda(estado.prenda, estado.fotoNueva, System.currentTimeMillis())
             if (result.isSuccess) {
                 _uiState.update { it.copy(guardando = false, navigateBack = true) }
@@ -118,8 +104,9 @@ class GarmentFormViewModel @Inject constructor(
 
     fun borrar() {
         val prenda = _uiState.value.prenda
+        if (_uiState.value.guardando) return
+        _uiState.update { it.copy(confirmarBorrado = false, guardando = true, errorMessageRes = null) }
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(confirmarBorrado = false, guardando = true, errorMessageRes = null) }
             val result = armarioRepository.borrarPrenda(prenda)
             if (result.isSuccess) {
                 _uiState.update { it.copy(guardando = false, navigateBack = true) }

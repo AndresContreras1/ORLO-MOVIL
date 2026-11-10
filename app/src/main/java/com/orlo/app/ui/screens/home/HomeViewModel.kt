@@ -23,15 +23,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class HomeState(
-    val nombre: String = "",
-    val resultado: ResultadoUi? = null,
-    // null si no se pudo leer la cuenta: la pantalla no muestra el aviso de premium ni los mensajes
-    val cuenta: CuentaUi? = null,
-    val isLoading: Boolean = true,
-    @StringRes val errorMessageRes: Int? = null,
-)
-
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val usuarioRepository: UsuarioRepository,

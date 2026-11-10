@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">ORLO</string>
+    <!-- El nombre como se escribe en el logo -->
+    <string name="marca" translatable="false">orlo</string>
+    <string name="logo_descripcion">Logo de ORLO</string>
 
     <!-- Generales -->
     <string name="continuar">Continuar</string>
@@ -309,6 +312,8 @@
     <string name="privacidad_texto">Tus fotos, prendas y conversaciones son privadas: nadie más las ve y no se usan para otro fin. Puedes corregir tus datos o borrar todo cuando quieras.</string>
     <string name="cerrar_sesion">Cerrar sesión</string>
     <string name="eliminar_cuenta">Eliminar mi cuenta</string>
+    <string name="eliminando_cuenta">Eliminando tu cuenta…</string>
+    <string name="sin_cuestionario">Todavía no hay un cuestionario publicado. Vuelve en un rato.</string>
     <string name="borrar_cuenta_titulo">¿Eliminar tu cuenta?</string>
     <string name="borrar_cuenta_texto">Se borran tu perfil, tus resultados, tus prendas con sus fotos, tus outfits y tus conversaciones. No se puede deshacer.</string>
     <string name="borrar_todo">Eliminar todo</string>
@@ -339,6 +344,11 @@
     <string name="error_elige_color">Elige el color principal.</string>
     <string name="error_nombre_outfit">Ponle un nombre al outfit.</string>
     <string name="error_elige_prendas">Elige al menos una prenda.</string>
+    <string name="error_contrasena_debil">Esa contraseña es muy fácil de adivinar. Usa una más larga.</string>
+    <string name="error_asesor_no_disponible">El asesor no está disponible en este momento. Intenta de nuevo en un rato; esta pregunta no se descontó.</string>
+    <string name="error_cuestionario_cambio">El cuestionario se actualizó mientras respondías. Vamos a cargarlo de nuevo.</string>
+    <string name="error_datos_invalidos">Algo de lo que enviaste no es válido. Revisa e intenta de nuevo.</string>
+    <string name="error_cargar_cuenta">No pudimos cargar los datos de tu cuenta.</string>
     <string name="error_cargar_perfil">No pudimos cargar tu perfil.</string>
     <string name="error_guardar_perfil">No pudimos guardar tus datos.</string>
     <string name="error_cargar_cuestionario">No pudimos cargar el cuestionario.</string>

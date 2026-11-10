@@ -2,13 +2,14 @@ package com.orlo.app.ui.navigation
 
 // Definicion de las rutas de la aplicacion. Cada objeto tiene una ruta distinta
 sealed class Screen(val route: String) {
-    // Tramo gratuito: de la bienvenida al resultado
+    // De la bienvenida al resultado
     data object Splash : Screen(route = "splash")
     data object Welcome : Screen(route = "welcome")
     data object Login : Screen(route = "login")
     data object SignUp : Screen(route = "signUp")
     data object Quiz : Screen(route = "quiz")
     data object Result : Screen(route = "result")
+    // El plan premium: en esta version todo esta abierto y se abre solo para verlo
     data object Paywall : Screen(route = "paywall")
 
     // Los datos del perfil: en el registro van seguidos del cuestionario; al editarlos, vuelven atras
@@ -29,7 +30,7 @@ sealed class Screen(val route: String) {
     }
 
     data object LessonDetail : Screen(route = "lessonDetail/{lessonId}") {
-        fun createRoute(lessonId: Long) = "lessonDetail/$lessonId"
+        fun createRoute(lessonId: String) = "lessonDetail/$lessonId"
     }
 
     // Crear y editar con la misma pantalla: sin id es una prenda (o un outfit) nueva

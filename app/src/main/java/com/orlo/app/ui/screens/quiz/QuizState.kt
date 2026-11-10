@@ -8,7 +8,7 @@ data class QuizState(
     val cuestionario: CuestionarioUi = CuestionarioUi(),
     val indice: Int = 0,
     // Las opciones elegidas en cada pregunta, por el id de la pregunta
-    val respuestas: Map<Long, Set<Long>> = emptyMap(),
+    val respuestas: Map<String, Set<String>> = emptyMap(),
     val isLoading: Boolean = true,
     @StringRes val errorCargaRes: Int? = null,
     @StringRes val errorMessageRes: Int? = null,
@@ -19,7 +19,7 @@ data class QuizState(
 
     val preguntaActual: PreguntaUi? get() = cuestionario.preguntas.getOrNull(indice)
 
-    val seleccionActual: Set<Long>
+    val seleccionActual: Set<String>
         get() = preguntaActual?.let { respuestas[it.id] } ?: emptySet()
 
     val esUltima: Boolean get() = indice == total - 1

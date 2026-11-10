@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.orlo.app.R
 import com.orlo.app.ui.theme.OrloTheme
 import com.orlo.app.ui.utils.AppButton
+import com.orlo.app.ui.utils.AppPasswordField
 import com.orlo.app.ui.utils.AppTextField
 import com.orlo.app.ui.utils.ErrorMessage
 import com.orlo.app.ui.utils.ScreenTitle
@@ -96,24 +97,20 @@ fun SignUpScreenContent(
             keyboardType = KeyboardType.Email,
             modifier = Modifier.testTag("txtEmail"),
         )
-        AppTextField(
+        AppPasswordField(
             value = state.contrasena,
             onValueChange = onContrasenaChange,
             label = stringResource(R.string.campo_contrasena),
-            keyboardType = KeyboardType.Password,
-            esContrasena = true,
-            contrasenaVisible = state.contrasenaVisible,
-            onContrasenaVisibleChange = onContrasenaVisibleChange,
+            visible = state.contrasenaVisible,
+            onVisibleChange = onContrasenaVisibleChange,
             modifier = Modifier.testTag("txtPassword"),
         )
-        AppTextField(
+        AppPasswordField(
             value = state.confirmacion,
             onValueChange = onConfirmacionChange,
             label = stringResource(R.string.campo_confirmar_contrasena),
-            keyboardType = KeyboardType.Password,
-            esContrasena = true,
-            contrasenaVisible = state.contrasenaVisible,
-            onContrasenaVisibleChange = onContrasenaVisibleChange,
+            visible = state.contrasenaVisible,
+            onVisibleChange = onContrasenaVisibleChange,
             modifier = Modifier.testTag("txtConfirmPassword"),
         )
         Row(verticalAlignment = Alignment.CenterVertically) {

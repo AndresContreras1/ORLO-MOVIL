@@ -49,7 +49,7 @@ fun PrendaCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1F)
-                        .background(colorDeHex(colorDePrenda(prenda.color)?.hex ?: "#DDD5CE")),
+                        .background(colorDePrenda(prenda.color)?.let { colorDeHex(it.hex) } ?: MaterialTheme.colorScheme.surfaceVariant),
                 )
             }
             Column(modifier = Modifier.padding(8.dp)) {

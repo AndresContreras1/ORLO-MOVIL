@@ -33,6 +33,7 @@ import com.orlo.app.data.model.PreguntaUi
 import com.orlo.app.ui.screens.quiz.components.OpcionCard
 import com.orlo.app.ui.theme.OrloTheme
 import com.orlo.app.ui.utils.AppButton
+import com.orlo.app.ui.utils.EmptyMessage
 import com.orlo.app.ui.utils.ErrorBox
 import com.orlo.app.ui.utils.ErrorMessage
 import com.orlo.app.ui.utils.LoadingBox
@@ -70,12 +71,17 @@ fun QuizScreen(
 @Composable
 fun QuizScreenContent(
     state: QuizState,
-    onOpcion: (Long) -> Unit,
+    onOpcion: (String) -> Unit,
     onSiguiente: () -> Unit,
     onAtras: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val pregunta = state.preguntaActual ?: return
+    // Si el cuestionario llega sin preguntas se explica, en vez de dejar la pantalla en blanco
+    val pregunta = state.preguntaActual
+    if (pregunta == null) {
+        EmptyMessage(messageRes = R.string.sin_cuestionario, modifier = modifier.testTag("quizScreen"))
+        return
+    }
 
     Column(
         modifier = modifier
@@ -148,8 +154,8 @@ fun QuizScreenPreview() {
                     version = 1,
                     preguntas = listOf(
                         PreguntaUi(
-                            id = 1, texto = "¿Qué prendas usas más en la semana?", multiple = true,
-                            opciones = listOf(OpcionUi(1, "Camisetas"), OpcionUi(2, "Jeans"), OpcionUi(3, "Vestidos")),
+                            id = "1", texto = "¿Qué prendas usas más en la semana?", multiple = true,
+                            opciones = listOf(OpcionUi("1", "Camisetas"), OpcionUi("2", "Jeans"), OpcionUi("3", "Vestidos")),
                         )
                     ),
                 ),

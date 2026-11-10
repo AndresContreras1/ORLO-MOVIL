@@ -15,10 +15,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -32,29 +30,28 @@ import com.orlo.app.ui.utils.AppOutlinedButton
 import com.orlo.app.ui.utils.ScreenTitle
 
 // Pantallas 6 y 7: que incluye premium, el precio, la renovacion y como cancelar, antes de cobrar.
-// El cobro con la tienda de aplicaciones todavia no esta conectado: por ahora el acceso premium lo
-// activa el equipo desde el panel, y el boton lo explica en vez de fallar
+// En esta version todo esta abierto: se llega solo desde Mi cuenta, para ver el plan
 @Composable
 fun PaywallScreen(
+    paywallViewModel: PaywallViewModel,
     onAhoraNo: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Estado solo de la vista: si el aviso esta abierto
-    var mostrarAviso by remember { mutableStateOf(false) }
+    val state by paywallViewModel.uiState.collectAsState()
 
     PaywallScreenContent(
-        onSuscribirme = { mostrarAviso = true },
+        onSuscribirme = { paywallViewModel.suscribirme() },
         onAhoraNo = onAhoraNo,
         modifier = modifier,
     )
 
-    if (mostrarAviso) {
+    if (state.mostrarAviso) {
         AlertDialog(
-            onDismissRequest = { mostrarAviso = false },
+            onDismissRequest = { paywallViewModel.cerrarAviso() },
             title = { Text(text = stringResource(R.string.pago_pronto_titulo)) },
             text = { Text(text = stringResource(R.string.pago_pronto_texto)) },
             confirmButton = {
-                TextButton(onClick = { mostrarAviso = false }) { Text(text = stringResource(R.string.entendido)) }
+                TextButton(onClick = { paywallViewModel.cerrarAviso() }) { Text(text = stringResource(R.string.entendido)) }
             },
         )
     }

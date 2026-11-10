@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.orlo.app.R
+import com.orlo.app.data.local.LocalPreviewProvider
 import com.orlo.app.data.model.EstadoLeccion
 import com.orlo.app.data.model.LeccionResumenUi
 import com.orlo.app.ui.screens.lessons.components.LeccionCard
@@ -32,7 +33,7 @@ import com.orlo.app.ui.utils.ScreenTitle
 @Composable
 fun LessonsScreen(
     lessonsViewModel: LessonsViewModel,
-    onLeccion: (Long) -> Unit,
+    onLeccion: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by lessonsViewModel.uiState.collectAsState()
@@ -60,7 +61,7 @@ fun LessonsScreenContent(
     lecciones: List<LeccionResumenUi>,
     completadas: Int,
     premium: Boolean,
-    onLeccion: (Long) -> Unit,
+    onLeccion: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -108,10 +109,7 @@ fun LessonsScreenContent(
 fun LessonsScreenPreview() {
     OrloTheme {
         LessonsScreenContent(
-            lecciones = listOf(
-                LeccionResumenUi(id = 1, titulo = "Conoce tu cuerpo", minutos = 4, muestraGratis = true, estado = EstadoLeccion.COMPLETADA),
-                LeccionResumenUi(id = 2, titulo = "Aprende sobre las proporciones", minutos = 5),
-            ),
+            lecciones = LocalPreviewProvider.lecciones,
             completadas = 1, premium = false, onLeccion = {},
         )
     }

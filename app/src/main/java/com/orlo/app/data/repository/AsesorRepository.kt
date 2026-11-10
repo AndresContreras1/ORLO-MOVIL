@@ -1,41 +1,32 @@
 package com.orlo.app.data.repository
 
 import android.util.Log
+import com.orlo.app.data.datasource.ArmarioRemoteDataSource
 import com.orlo.app.data.datasource.AsesorRemoteDataSource
 import com.orlo.app.data.datasource.AuthRemoteDataSource
 import com.orlo.app.data.datasource.ConversacionRemoteDataSource
+import com.orlo.app.data.datasource.UsuarioRemoteDataSource
 import com.orlo.app.data.dtos.HistorialAsesorDto
 import com.orlo.app.data.dtos.MensajeAsesorDto
 import com.orlo.app.data.dtos.PerfilAsesorDto
 import com.orlo.app.data.dtos.PrendaAsesorDto
 import com.orlo.app.data.dtos.toConversacionUi
+import com.orlo.app.data.dtos.toGuardarMensajeDto
 import com.orlo.app.data.dtos.toMensajeChatUi
-import com.orlo.app.data.dtos.toMensajeFirestoreDto
+import com.orlo.app.data.dtos.toPerfilUi
+import com.orlo.app.data.dtos.toPrendaUi
 import com.orlo.app.data.dtos.toRespuestaAsesorUi
 import com.orlo.app.data.model.AccionRapida
 import com.orlo.app.data.model.ConversacionUi
 import com.orlo.app.data.model.MensajeChatUi
+import com.orlo.app.data.model.OpcionesDelPerfil
+import com.orlo.app.data.model.PerfilUi
+import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.model.RespuestaAsesorUi
 import com.orlo.app.data.model.RolMensaje
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
-
-// Lo que el asesor recibe del usuario en cada pregunta, ya en texto: lo arma el ViewModel con el
-// perfil y el armario. El repositorio solo lo traduce al DTO del backend
-data class ContextoAsesor(
-    val nombre: String,
-    val rangoEdad: String? = null,
-    val tratoPrendas: String? = null,
-    val estiloPrincipal: String? = null,
-    val estiloSecundario: String? = null,
-    val tonoPiel: String? = null,
-    val colorCabello: String? = null,
-    val colorOjos: String? = null,
-    val clima: String? = null,
-    val presupuesto: String? = null,
-    val ocasiones: List<String> = emptyList(),
-    // Cada prenda como nombre, categoria y color
-    val prendas: List<Triple<String, String, String>> = emptyList(),
-)
 
 // La conversacion en la que quedo el mensaje y la respuesta del asesor
 data class ResultadoPregunta(
@@ -43,36 +34,45 @@ data class ResultadoPregunta(
     val respuesta: RespuestaAsesorUi,
 )
 
+// Une cuatro fuentes para dar una sola respuesta al ViewModel: el perfil y las prendas (Firestore)
+// arman lo que el asesor sabe del usuario, el backend responde y la conversacion queda en Firestore
 class AsesorRepository @Inject constructor(
     private val asesorRemoteDataSource: AsesorRemoteDataSource,
     private val conversacionRemoteDataSource: ConversacionRemoteDataSource,
+    private val usuarioRemoteDataSource: UsuarioRemoteDataSource,
+    private val armarioRemoteDataSource: ArmarioRemoteDataSource,
     private val authRemoteDataSource: AuthRemoteDataSource,
 ) {
 
-    // Guarda la pregunta, pide la respuesta al backend y guarda la respuesta. Si la conversacion no
-    // existe todavia, la crea con el inicio de la pregunta como titulo
+    // Primero el backend: si responde 403, 429 o 503 no se guarda nada en la conversacion. La
+    // pregunta y la respuesta se guardan juntas despues
     suspend fun preguntar(
         conversacionId: String?,
         texto: String,
         accion: AccionRapida?,
-        contexto: ContextoAsesor,
         historial: List<MensajeChatUi>,
         fecha: Long,
     ): Result<ResultadoPregunta> {
         return try {
-            val uid = authRemoteDataSource.currentUser?.uid ?: throw SinSesionException()
+            val uid = authRemoteDataSource.uidOError()
 
-            // Primero el backend: si responde 403 o 429 no se guarda nada en la conversacion
+            // El perfil y las prendas son independientes: se piden al tiempo. Si fallan, el asesor
+            // responde igual con menos contexto
+            val (perfil, prendas) = coroutineScope {
+                val perfil = async { runCatching { usuarioRemoteDataSource.getUsuario(uid)?.toPerfilUi() }.getOrNull() }
+                val prendas = async { runCatching { armarioRemoteDataSource.getPrendas(uid).map { it.toPrendaUi() } }.getOrNull() }
+                perfil.await() to prendas.await()
+            }
+
             val respuesta = asesorRemoteDataSource.enviarMensaje(
                 MensajeAsesorDto(
-                    message = texto,
+                    message = texto.take(MAX_TEXTO),
                     quickAction = accion?.codigo,
-                    profile = contexto.toPerfilAsesorDto(),
-                    wardrobe = contexto.prendas.map { (nombre, categoria, color) ->
-                        PrendaAsesorDto(name = nombre, category = categoria, color = color)
-                    },
-                    // Solo los ultimos mensajes: suficiente contexto sin enviar toda la conversacion
-                    history = historial.takeLast(MAX_HISTORIAL).map {
+                    profile = (perfil ?: PerfilUi()).toPerfilAsesorDto(),
+                    wardrobe = (prendas ?: emptyList()).take(MAX_PRENDAS).map { it.toPrendaAsesorDto() },
+                    // Solo los ultimos mensajes con texto: suficiente contexto y el backend no
+                    // acepta textos vacios en el historial
+                    history = historial.filter { it.texto.isNotBlank() }.takeLast(MAX_HISTORIAL).map {
                         HistorialAsesorDto(
                             role = if (it.rol == RolMensaje.ASESOR) "ASSISTANT" else "USER",
                             text = it.texto,
@@ -81,15 +81,14 @@ class AsesorRepository @Inject constructor(
                 )
             ).toRespuestaAsesorUi(fecha = fecha + 1)
 
-            val id = conversacionId ?: conversacionRemoteDataSource.crearConversacion(
-                userId = uid,
-                titulo = texto.take(MAX_TITULO),
-                fecha = fecha,
-            )
-
             val pregunta = MensajeChatUi(rol = RolMensaje.USUARIO, texto = texto, fecha = fecha)
-            conversacionRemoteDataSource.agregarMensaje(uid, id, pregunta.toMensajeFirestoreDto())
-            conversacionRemoteDataSource.agregarMensaje(uid, id, respuesta.mensaje.toMensajeFirestoreDto())
+            val id = conversacionRemoteDataSource.guardarIntercambio(
+                userId = uid,
+                conversacionId = conversacionId,
+                titulo = texto.take(MAX_TITULO),
+                pregunta = pregunta.toGuardarMensajeDto(),
+                respuesta = respuesta.mensaje.toGuardarMensajeDto(),
+            )
 
             Result.success(ResultadoPregunta(conversacionId = id, respuesta = respuesta))
         } catch (e: Exception) {
@@ -100,8 +99,9 @@ class AsesorRepository @Inject constructor(
 
     suspend fun getConversaciones(): Result<List<ConversacionUi>> {
         return try {
-            val uid = authRemoteDataSource.currentUser?.uid ?: throw SinSesionException()
-            Result.success(conversacionRemoteDataSource.getConversaciones(uid).map { it.toConversacionUi() })
+            Result.success(
+                conversacionRemoteDataSource.getConversaciones(authRemoteDataSource.uidOError()).map { it.toConversacionUi() }
+            )
         } catch (e: Exception) {
             Log.d("AsesorRepository", "getConversaciones: ${e.message}")
             Result.failure(errorDe(e))
@@ -110,9 +110,9 @@ class AsesorRepository @Inject constructor(
 
     suspend fun getMensajes(conversacionId: String): Result<List<MensajeChatUi>> {
         return try {
-            val uid = authRemoteDataSource.currentUser?.uid ?: throw SinSesionException()
             Result.success(
-                conversacionRemoteDataSource.getMensajes(uid, conversacionId).map { it.toMensajeChatUi() }
+                conversacionRemoteDataSource.getMensajes(authRemoteDataSource.uidOError(), conversacionId)
+                    .map { it.toMensajeChatUi() }
             )
         } catch (e: Exception) {
             Log.d("AsesorRepository", "getMensajes: ${e.message}")
@@ -122,8 +122,7 @@ class AsesorRepository @Inject constructor(
 
     suspend fun borrarConversacion(conversacionId: String): Result<Unit> {
         return try {
-            val uid = authRemoteDataSource.currentUser?.uid ?: throw SinSesionException()
-            conversacionRemoteDataSource.borrarConversacion(uid, conversacionId)
+            conversacionRemoteDataSource.borrarConversacion(authRemoteDataSource.uidOError(), conversacionId)
             Result.success(Unit)
         } catch (e: Exception) {
             Log.d("AsesorRepository", "borrarConversacion: ${e.message}")
@@ -131,22 +130,33 @@ class AsesorRepository @Inject constructor(
         }
     }
 
-    private fun ContextoAsesor.toPerfilAsesorDto(): PerfilAsesorDto = PerfilAsesorDto(
-        name = nombre,
-        ageRange = rangoEdad,
-        garmentPronoun = tratoPrendas,
-        primaryStyle = estiloPrincipal,
-        secondaryStyle = estiloSecundario,
-        skinTone = tonoPiel,
-        hairColor = colorCabello,
-        eyeColor = colorOjos,
-        climate = clima,
-        budget = presupuesto,
-        occasions = ocasiones,
+    // Lo que el asesor sabe del usuario, en palabras: el primer nombre y las preferencias. Nada de
+    // correo, apellidos ni identificadores
+    private fun PerfilUi.toPerfilAsesorDto(): PerfilAsesorDto = PerfilAsesorDto(
+        name = nombre.trim().split(" ").firstOrNull().orEmpty(),
+        ageRange = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.rangosDeEdad, rangoEdad),
+        garmentPronoun = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.tratoPrendas, tratoPrendas),
+        primaryStyle = resultadoActual?.principal?.nombre,
+        secondaryStyle = resultadoActual?.secundario?.nombre,
+        skinTone = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.tonosDePiel, tonoPiel),
+        hairColor = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.coloresDeCabello, colorCabello),
+        eyeColor = OpcionesDelPerfil.colorParaAsesor(OpcionesDelPerfil.coloresDeOjos, colorOjos),
+        climate = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.climas, clima),
+        budget = OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.presupuestos, presupuesto),
+        occasions = ocasiones.mapNotNull { OpcionesDelPerfil.paraAsesor(OpcionesDelPerfil.ocasiones, it) },
+    )
+
+    private fun PrendaUi.toPrendaAsesorDto(): PrendaAsesorDto = PrendaAsesorDto(
+        name = nombre.ifBlank { categoria.paraAsesor },
+        category = categoria.paraAsesor,
+        color = color,
     )
 
     companion object {
         const val MAX_HISTORIAL = 10
         const val MAX_TITULO = 40
+        // Limites que acepta el backend
+        const val MAX_TEXTO = 1000
+        const val MAX_PRENDAS = 80
     }
 }

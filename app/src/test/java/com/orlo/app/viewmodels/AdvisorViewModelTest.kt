@@ -5,7 +5,6 @@ import com.orlo.app.R
 import com.orlo.app.data.model.CuentaUi
 import com.orlo.app.data.model.MensajeChatUi
 import com.orlo.app.data.model.OutfitPropuestoUi
-import com.orlo.app.data.model.PerfilUi
 import com.orlo.app.data.model.RespuestaAsesorUi
 import com.orlo.app.data.model.RolMensaje
 import com.orlo.app.data.model.OutfitUi
@@ -14,7 +13,6 @@ import com.orlo.app.data.repository.AsesorRepository
 import com.orlo.app.data.repository.CuentaRepository
 import com.orlo.app.data.repository.LimiteAlcanzadoException
 import com.orlo.app.data.repository.ResultadoPregunta
-import com.orlo.app.data.repository.UsuarioRepository
 import com.orlo.app.ui.screens.advisor.AdvisorViewModel
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -36,7 +34,6 @@ class AdvisorViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var asesorRepository: AsesorRepository
     private lateinit var cuentaRepository: CuentaRepository
-    private lateinit var usuarioRepository: UsuarioRepository
     private lateinit var armarioRepository: ArmarioRepository
     private lateinit var viewModel: AdvisorViewModel
 
@@ -45,11 +42,8 @@ class AdvisorViewModelTest {
         Dispatchers.setMain(testDispatcher)
         asesorRepository = mockk()
         cuentaRepository = mockk()
-        usuarioRepository = mockk()
         armarioRepository = mockk()
-        coEvery { usuarioRepository.getPerfil() } returns Result.success(PerfilUi(nombre = "Laura Gómez"))
-        coEvery { armarioRepository.getPrendas() } returns Result.success(emptyList())
-        viewModel = AdvisorViewModel(asesorRepository, cuentaRepository, usuarioRepository, armarioRepository, testDispatcher)
+        viewModel = AdvisorViewModel(asesorRepository, cuentaRepository, armarioRepository, testDispatcher)
     }
 
     @After
@@ -69,14 +63,14 @@ class AdvisorViewModelTest {
         advanceUntilIdle()
         //Assert
         assertThat(viewModel.uiState.value.premium).isFalse()
-        coVerify(exactly = 0) { asesorRepository.preguntar(any(), any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { asesorRepository.preguntar(any(), any(), any(), any(), any()) }
     }
 
     @Test
     fun enviar_premium_muestraPreguntaYRespuestaYActualizaElLimite() = runTest {
         //Arrange
         coEvery { cuentaRepository.getCuenta() } returns Result.success(CuentaUi(premium = true, limiteDiario = 20, mensajesRestantes = 10))
-        coEvery { asesorRepository.preguntar(null, "¿Qué me pongo?", null, any(), any(), any()) } returns Result.success(
+        coEvery { asesorRepository.preguntar(null, "¿Qué me pongo?", null, any(), any()) } returns Result.success(
             ResultadoPregunta(
                 conversacionId = "conv_1",
                 respuesta = RespuestaAsesorUi(
@@ -103,7 +97,7 @@ class AdvisorViewModelTest {
     fun enviar_limiteAlcanzado_quitaLaPreguntaYDejaCeroMensajes() = runTest {
         //Arrange
         coEvery { cuentaRepository.getCuenta() } returns Result.success(CuentaUi(premium = true, limiteDiario = 20, mensajesRestantes = 1))
-        coEvery { asesorRepository.preguntar(any(), any(), any(), any(), any(), any()) } returns
+        coEvery { asesorRepository.preguntar(any(), any(), any(), any(), any()) } returns
             Result.failure(LimiteAlcanzadoException())
         viewModel.cargar(null)
         advanceUntilIdle()
@@ -133,5 +127,26 @@ class AdvisorViewModelTest {
         //Assert
         assertThat(viewModel.uiState.value.outfitsGuardados).containsExactly("asesor-1-0")
         coVerify(exactly = 1) { armarioRepository.guardarOutfitDelAsesor(any(), any()) }
+    }
+
+    @Test
+    fun updateTexto_masDe1000Caracteres_seRecorta() = runTest {
+        //Act
+        viewModel.updateTexto("a".repeat(1200))
+        //Assert
+        assertThat(viewModel.uiState.value.texto).hasLength(AsesorRepository.MAX_TEXTO)
+    }
+
+    @Test
+    fun guardarOutfit_falla_loDesmarcaParaReintentar() = runTest {
+        //Arrange
+        coEvery { armarioRepository.guardarOutfitDelAsesor(any(), any()) } returns Result.failure(RuntimeException("caido"))
+        val mensaje = MensajeChatUi(id = "asesor-1", rol = RolMensaje.ASESOR, outfits = listOf(OutfitPropuestoUi("Fresco")))
+        //Act
+        viewModel.guardarOutfit(mensaje, 0)
+        advanceUntilIdle()
+        //Assert
+        assertThat(viewModel.uiState.value.outfitsGuardados).isEmpty()
+        assertThat(viewModel.uiState.value.errorMessageRes).isNotNull()
     }
 }

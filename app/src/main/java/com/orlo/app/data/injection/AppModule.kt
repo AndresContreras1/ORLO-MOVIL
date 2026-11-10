@@ -4,7 +4,6 @@ import com.orlo.app.BuildConfig
 import com.orlo.app.data.datasource.services.AsesorRetrofitService
 import com.orlo.app.data.datasource.services.CuentaRetrofitService
 import com.orlo.app.data.datasource.services.CuestionarioRetrofitService
-import com.orlo.app.data.datasource.services.EstiloRetrofitService
 import com.orlo.app.data.datasource.services.FirebaseTokenInterceptor
 import com.orlo.app.data.datasource.services.LeccionRetrofitService
 import dagger.Module
@@ -30,7 +29,7 @@ object AppModule {
     fun providesOkHttpClient(tokenInterceptor: FirebaseTokenInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(tokenInterceptor)
-            .connectTimeout(15, TimeUnit.SECONDS)
+            .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .build()
     }
@@ -45,11 +44,6 @@ object AppModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
-
-    @Singleton
-    @Provides
-    fun providesEstiloRetrofitService(retrofit: Retrofit): EstiloRetrofitService =
-        retrofit.create(EstiloRetrofitService::class.java)
 
     @Singleton
     @Provides

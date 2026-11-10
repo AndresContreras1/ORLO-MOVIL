@@ -22,7 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.orlo.app.R
-import com.orlo.app.data.model.EstiloUi
+import com.orlo.app.data.local.LocalPreviewProvider
 import com.orlo.app.data.model.ResultadoUi
 import com.orlo.app.ui.screens.result.components.TarjetaDeEstilo
 import com.orlo.app.ui.theme.OrloTheme
@@ -32,11 +32,11 @@ import com.orlo.app.ui.utils.LoadingBox
 import com.orlo.app.ui.utils.OrloAsyncImage
 import com.orlo.app.ui.utils.ScreenTitle
 
-// Pantalla 5: el diagnostico. El resultado ya quedo guardado en el perfil al terminar el cuestionario
+// Pantalla 5: el diagnostico. Continuar siempre lleva al inicio: en esta version todo esta abierto
 @Composable
 fun ResultScreen(
     resultViewModel: ResultViewModel,
-    onContinuar: (premium: Boolean) -> Unit,
+    onContinuar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by resultViewModel.uiState.collectAsState()
@@ -48,7 +48,7 @@ fun ResultScreen(
         error != null -> ErrorBox(messageRes = error, onRetry = { resultViewModel.cargarResultado() }, modifier = modifier)
         resultado != null -> ResultScreenContent(
             resultado = resultado,
-            onContinuar = { onContinuar(state.premium) },
+            onContinuar = onContinuar,
             modifier = modifier,
         )
     }
@@ -118,10 +118,7 @@ fun ResultScreenContent(
 fun ResultScreenPreview() {
     OrloTheme {
         ResultScreenContent(
-            resultado = ResultadoUi(
-                principal = EstiloUi(nombre = "Urbano", descripcion = "Prendas cómodas con un toque actual.", paleta = listOf("#2B2622", "#3D5A80")),
-                secundario = EstiloUi(nombre = "Creativo", descripcion = "Te gusta probar combinaciones distintas."),
-            ),
+            resultado = LocalPreviewProvider.resultado,
             onContinuar = {},
         )
     }

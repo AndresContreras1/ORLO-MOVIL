@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.orlo.app.R
 import com.orlo.app.data.injection.IoDispatcher
 import com.orlo.app.data.repository.AuthRepository
+import com.orlo.app.data.repository.ContenidoNoEncontradoException
 import com.orlo.app.data.repository.UsuarioRepository
 import com.orlo.app.ui.utils.mensajeDeError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,14 +18,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-// A donde va la app al abrirse, segun en que punto del recorrido quedo el usuario
-enum class DestinoInicial { BIENVENIDA, PERFIL, CUESTIONARIO, INICIO }
-
-data class SplashState(
-    val destino: DestinoInicial? = null,
-    val errorMessageRes: Int? = null,
-)
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
@@ -48,23 +41,25 @@ class SplashViewModel @Inject constructor(
             return
         }
 
+        _uiState.update { it.copy(errorMessageRes = null) }
         viewModelScope.launch(ioDispatcher) {
-            _uiState.update { it.copy(errorMessageRes = null) }
             val result = usuarioRepository.getPerfil()
+            val error = result.exceptionOrNull()
 
-            if (result.isSuccess) {
-                val perfil = result.getOrNull()
-                val destino = when {
-                    perfil == null || perfil.nombre.isBlank() -> DestinoInicial.PERFIL
-                    perfil.resultadoActual == null -> DestinoInicial.CUESTIONARIO
-                    else -> DestinoInicial.INICIO
-                }
+            val destino = when {
+                // Se registro pero no alcanzo a guardar el perfil
+                error is ContenidoNoEncontradoException -> DestinoInicial.PERFIL
+                error != null -> null
+                result.getOrThrow().nombre.isBlank() -> DestinoInicial.PERFIL
+                result.getOrThrow().resultadoActual == null -> DestinoInicial.CUESTIONARIO
+                else -> DestinoInicial.INICIO
+            }
+
+            if (destino != null) {
                 _uiState.update { it.copy(destino = destino) }
             } else {
-                Log.d("SplashViewModel", result.exceptionOrNull()?.message.toString())
-                _uiState.update {
-                    it.copy(errorMessageRes = mensajeDeError(result.exceptionOrNull(), R.string.error_cargar_perfil))
-                }
+                Log.d("SplashViewModel", error?.message.toString())
+                _uiState.update { it.copy(errorMessageRes = mensajeDeError(error, R.string.error_cargar_perfil)) }
             }
         }
     }

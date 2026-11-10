@@ -106,3 +106,27 @@ fun ErrorBoxPreview() {
         ErrorBox(messageRes = R.string.error_sin_conexion, onRetry = {})
     }
 }
+
+@Composable
+@Preview(showBackground = true)
+fun LoadingBoxPreview() {
+    OrloTheme {
+        LoadingBox()
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun ErrorMessagePreview() {
+    OrloTheme {
+        ErrorMessage(messageRes = R.string.error_sin_conexion)
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun EmptyMessagePreview() {
+    OrloTheme {
+        EmptyMessage(messageRes = R.string.sin_prendas)
+    }
+}

@@ -15,7 +15,7 @@ import com.orlo.app.data.model.ResultadoUi
 // es nulable porque el backend puede omitir un campo, y el mapeo pone el valor por defecto
 
 data class EstiloDto(
-    val id: Long? = null,
+    val id: String? = null,
     val code: String? = null,
     val name: String? = null,
     val description: String? = null,
@@ -24,7 +24,7 @@ data class EstiloDto(
 )
 
 fun EstiloDto.toEstiloUi(): EstiloUi = EstiloUi(
-    id = id ?: 0,
+    id = id ?: "",
     code = code ?: "",
     nombre = name ?: "",
     descripcion = description ?: "",
@@ -33,13 +33,13 @@ fun EstiloDto.toEstiloUi(): EstiloUi = EstiloUi(
 )
 
 data class OpcionDto(
-    val id: Long? = null,
+    val id: String? = null,
     val text: String? = null,
     val imageUrl: String? = null,
 )
 
 data class PreguntaDto(
-    val id: Long? = null,
+    val id: String? = null,
     val text: String? = null,
     val helpText: String? = null,
     val multiple: Boolean? = null,
@@ -48,24 +48,24 @@ data class PreguntaDto(
 )
 
 data class CuestionarioDto(
-    val version: Int? = null,
+    val version: Long? = null,
     val questions: List<PreguntaDto>? = null,
 )
 
 // Las preguntas llegan con su orden: la app las muestra en ese orden aunque el JSON venga revuelto
 fun CuestionarioDto.toCuestionarioUi(): CuestionarioUi = CuestionarioUi(
-    version = version ?: 0,
+    version = version ?: 0L,
     preguntas = (questions ?: emptyList())
         .sortedBy { it.order ?: 0 }
         .map { pregunta ->
             PreguntaUi(
-                id = pregunta.id ?: 0,
+                id = pregunta.id ?: "",
                 texto = pregunta.text ?: "",
                 ayuda = pregunta.helpText ?: "",
                 multiple = pregunta.multiple ?: false,
                 opciones = (pregunta.options ?: emptyList()).map { opcion ->
                     OpcionUi(
-                        id = opcion.id ?: 0,
+                        id = opcion.id ?: "",
                         texto = opcion.text ?: "",
                         imagenUrl = opcion.imageUrl,
                     )
@@ -76,8 +76,8 @@ fun CuestionarioDto.toCuestionarioUi(): CuestionarioUi = CuestionarioUi(
 
 // Lo que se envia para calcular el resultado: las opciones elegidas en cada pregunta
 data class RespuestaDto(
-    val questionId: Long,
-    val optionIds: List<Long>,
+    val questionId: String,
+    val optionIds: List<String>,
 )
 
 data class PuntuarCuestionarioDto(
@@ -97,7 +97,7 @@ fun ResultadoCuestionarioDto.toResultadoUi(fecha: Long): ResultadoUi = Resultado
 )
 
 data class LeccionResumenDto(
-    val id: Long? = null,
+    val id: String? = null,
     val title: String? = null,
     val summary: String? = null,
     val order: Int? = null,
@@ -107,7 +107,7 @@ data class LeccionResumenDto(
 )
 
 fun LeccionResumenDto.toLeccionResumenUi(estado: EstadoLeccion): LeccionResumenUi = LeccionResumenUi(
-    id = id ?: 0,
+    id = id ?: "",
     titulo = title ?: "",
     resumen = summary ?: "",
     orden = order ?: 0,
@@ -129,7 +129,7 @@ data class RepasoDto(
 )
 
 data class LeccionDto(
-    val id: Long? = null,
+    val id: String? = null,
     val title: String? = null,
     val mainIdea: String? = null,
     val examples: List<EjemploDto>? = null,
@@ -140,7 +140,7 @@ data class LeccionDto(
 )
 
 fun LeccionDto.toLeccionUi(): LeccionUi = LeccionUi(
-    id = id ?: 0,
+    id = id ?: "",
     titulo = title ?: "",
     ideaPrincipal = mainIdea ?: "",
     ejemplos = (examples ?: emptyList()).map { EjemploUi(imagenUrl = it.imageUrl, texto = it.text ?: "") },
