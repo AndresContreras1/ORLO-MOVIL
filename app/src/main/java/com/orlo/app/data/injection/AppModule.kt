@@ -3,6 +3,8 @@ package com.orlo.app.data.injection
 import com.orlo.app.BuildConfig
 import com.orlo.app.data.datasource.services.AsesorRetrofitService
 import com.orlo.app.data.datasource.services.CuentaRetrofitService
+import com.orlo.app.data.datasource.services.ExploraRetrofitService
+import com.orlo.app.data.datasource.services.TiendaRetrofitService
 import com.orlo.app.data.datasource.services.CuestionarioRetrofitService
 import com.orlo.app.data.datasource.services.FirebaseTokenInterceptor
 import com.orlo.app.data.datasource.services.LeccionRetrofitService
@@ -64,4 +66,14 @@ object AppModule {
     @Provides
     fun providesCuentaRetrofitService(retrofit: Retrofit): CuentaRetrofitService =
         retrofit.create(CuentaRetrofitService::class.java)
+
+    @Singleton
+    @Provides
+    fun providesExploraRetrofitService(retrofit: Retrofit): ExploraRetrofitService =
+        retrofit.create(ExploraRetrofitService::class.java)
+
+    @Singleton
+    @Provides
+    fun providesTiendaRetrofitService(retrofit: Retrofit): TiendaRetrofitService =
+        retrofit.create(TiendaRetrofitService::class.java)
 }

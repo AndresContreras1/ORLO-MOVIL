@@ -38,10 +38,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.orlo.app.R
+import com.orlo.app.data.local.LocalPreviewProvider
 import com.orlo.app.data.model.CuentaUi
 import com.orlo.app.data.model.EstiloUi
+import com.orlo.app.data.model.OutfitDelDiaUi
 import com.orlo.app.data.model.ResultadoUi
 import com.orlo.app.ui.screens.home.components.TarjetaDeSeccion
+import com.orlo.app.ui.screens.home.components.TarjetaOutfitDelDia
 import com.orlo.app.ui.screens.result.components.TarjetaDeEstilo
 import com.orlo.app.ui.theme.OrloTheme
 import com.orlo.app.ui.utils.AppButton
@@ -89,6 +92,10 @@ fun HomeScreen(
             fotoUrl = state.fotoUrl,
             resultado = state.resultado,
             cuenta = state.cuenta,
+            outfitDelDia = state.outfitDelDia,
+            pidiendoOutfit = state.pidiendoOutfit,
+            errorOutfitRes = state.errorOutfitRes,
+            onPedirOutfit = { homeViewModel.pedirOutfitDelDia() },
             onAprende = onAprende,
             onAsesor = onAsesor,
             onExplora = onExplora,
@@ -107,6 +114,10 @@ fun HomeScreenContent(
     fotoUrl: String?,
     resultado: ResultadoUi?,
     cuenta: CuentaUi?,
+    outfitDelDia: OutfitDelDiaUi?,
+    pidiendoOutfit: Boolean,
+    errorOutfitRes: Int?,
+    onPedirOutfit: () -> Unit,
     onAprende: () -> Unit,
     onAsesor: () -> Unit,
     onExplora: () -> Unit,
@@ -148,6 +159,15 @@ fun HomeScreenContent(
             TarjetaDeEstilo(resultado = resultado, mostrarDescripcion = false)
         } else {
             AppButton(texto = stringResource(R.string.descubrir_mi_estilo), onClick = onCuestionario)
+        }
+
+        if (resultado != null) {
+            TarjetaOutfitDelDia(
+                outfit = outfitDelDia,
+                pidiendo = pidiendoOutfit,
+                errorRes = errorOutfitRes,
+                onPedir = onPedirOutfit,
+            )
         }
 
         if (bloqueada) {
@@ -214,6 +234,7 @@ fun HomeScreenPreview() {
             fotoUrl = null,
             resultado = ResultadoUi(principal = EstiloUi(nombre = "Urbano", paleta = listOf("#2B2622", "#3D5A80")), secundario = EstiloUi(nombre = "Creativo")),
             cuenta = CuentaUi(premium = false),
+            outfitDelDia = LocalPreviewProvider.outfitDelDia, pidiendoOutfit = false, errorOutfitRes = null, onPedirOutfit = {},
             onAprende = {}, onAsesor = {}, onExplora = {}, onArmario = {}, onCuenta = {}, onPremium = {}, onCuestionario = {},
         )
     }

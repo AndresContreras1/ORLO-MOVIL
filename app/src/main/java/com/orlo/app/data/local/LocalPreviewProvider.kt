@@ -8,12 +8,16 @@ import com.orlo.app.data.model.EjemploUi
 import com.orlo.app.data.model.ElementoHistorialUi
 import com.orlo.app.data.model.EstadoLeccion
 import com.orlo.app.data.model.EstiloUi
+import com.orlo.app.data.model.GuardadoUi
+import com.orlo.app.data.model.IdeaCombinarUi
+import com.orlo.app.data.model.ItemExploraUi
 import com.orlo.app.data.model.LeccionResumenUi
 import com.orlo.app.data.model.LeccionUi
 import com.orlo.app.data.model.MensajeChatUi
 import com.orlo.app.data.model.OcasionOutfit
 import com.orlo.app.data.model.OpcionUi
 import com.orlo.app.data.model.OrigenOutfit
+import com.orlo.app.data.model.OutfitDelDiaUi
 import com.orlo.app.data.model.OutfitPropuestoUi
 import com.orlo.app.data.model.OutfitUi
 import com.orlo.app.data.model.PerfilUi
@@ -22,6 +26,8 @@ import com.orlo.app.data.model.PrendaUi
 import com.orlo.app.data.model.RepasoUi
 import com.orlo.app.data.model.ResultadoUi
 import com.orlo.app.data.model.RolMensaje
+import com.orlo.app.data.model.SugerenciaArmarioUi
+import com.orlo.app.data.model.TiendaUi
 
 // Datos locales de ejemplo para los previews y las pruebas con mocks. No los usa la app en tiempo
 // de ejecucion: los datos reales vienen de Firebase y del backend
@@ -133,5 +139,54 @@ object LocalPreviewProvider {
         ElementoHistorialUi.Outfit(outfits.first()),
         ElementoHistorialUi.Resultado(resultado),
         ElementoHistorialUi.Conversacion(conversacion),
+    )
+
+    val itemsExplora = listOf(
+        ItemExploraUi(
+            id = "17",
+            nombre = "Blazer azul oscuro",
+            imagenUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Navy_blazer_jacket.jpg/960px-Navy_blazer_jacket.jpg",
+            credito = "Wikimedia Commons",
+            categoria = CategoriaPrenda.ABRIGO,
+            color = "azul",
+            estilos = listOf("clasico", "elegante"),
+            porQueTeQueda = "El blazer azul oscuro arregla al instante; sobre camiseta se ve moderno.",
+            ideas = listOf(
+                IdeaCombinarUi(contexto = "casual", prendas = listOf("Jean azul oscuro", "Tenis blancos clásicos")),
+                IdeaCombinarUi(contexto = "elegante", prendas = listOf("Camisa por dentro", "Mocasines de cuero")),
+            ),
+        ),
+        ItemExploraUi(
+            id = "5",
+            nombre = "Tenis blancos",
+            categoria = CategoriaPrenda.CALZADO,
+            color = "blanco",
+            porQueTeQueda = "Van con casi todo y bajan el tono de lo formal.",
+            tendencia = true,
+        ),
+    )
+
+    val sugerencias = listOf(
+        SugerenciaArmarioUi(
+            categoria = CategoriaPrenda.ABRIGO,
+            titulo = "Una chaqueta o abrigo",
+            razon = "Con una capa encima, lo que ya tienes sirve para más ocasiones.",
+            items = itemsExplora,
+        ),
+    )
+
+    val tiendas = listOf(
+        TiendaUi(id = "1", nombre = "Tienda de ejemplo", tipos = listOf("Camisas", "Pantalones"), url = "https://example.com"),
+    )
+
+    val guardados = listOf(
+        GuardadoUi(itemId = "17", nombre = "Blazer azul oscuro", categoria = CategoriaPrenda.ABRIGO, fecha = FECHA),
+    )
+
+    val outfitDelDia = OutfitDelDiaUi(
+        titulo = "Lunes cómodo y arreglado",
+        prendas = listOf("Jean azul", "Camisa blanca", "Tenis blancos"),
+        porQue = "Los neutros te dejan sumar color con un accesorio.",
+        fecha = FECHA,
     )
 }
