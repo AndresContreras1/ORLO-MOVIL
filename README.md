@@ -54,7 +54,7 @@ En desarrollo el backend corre con `ORLO_PREMIUM_PARA_TODOS=true`: todas las fun
 ./gradlew testDebugUnitTest
 ```
 
-Unitarias con MockK, Truth y `runTest` (68): 10 de mapeos de DTOs, 31 de repositorios y 27 de ViewModels con los data sources o repositorios moqueados. Los flujos en vivo se simulan con `MutableStateFlow`.
+Unitarias con MockK, Truth y `runTest` (70): 10 de mapeos de DTOs, 33 de repositorios y 27 de ViewModels con los data sources o repositorios moqueados. Los flujos en vivo se simulan con `MutableStateFlow`.
 
 ```bash
 ./gradlew connectedDebugAndroidTest
