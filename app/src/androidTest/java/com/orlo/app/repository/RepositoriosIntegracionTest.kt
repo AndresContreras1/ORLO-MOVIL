@@ -170,6 +170,7 @@ class RepositoriosIntegracionTest {
         assertThat(url).startsWith("http://127.0.0.1:9199/")
         val perfil = usuarioRepository.observarPerfil().esperar { it.fotoUrl != null }
         assertThat(perfil.fotoUrl).isEqualTo(url)
+        assertThat(Firebase.auth.currentUser?.photoUrl.toString()).isEqualTo(url)
     }
 
     @Test
@@ -261,6 +262,15 @@ class RepositoriosIntegracionTest {
         assertThat(outfitDelDiaRepository.getDeHoy("2026-11-09").getOrThrow()?.titulo).isEqualTo("Lunes cómodo")
         assertThat(pedidoOutfit?.profile?.name).isEqualTo("Laura")
         assertThat(pedidoOutfit?.wardrobe?.single()?.name).isEqualTo("Jean azul")
+    }
+
+    @Test
+    fun observarLeccionesCompletadas_dosLecciones_cuentaSoloLasCompletadas() = runTest {
+        //Act
+        leccionRepository.guardarEstado("1", EstadoLeccion.EN_CURSO, fecha = 1).getOrThrow()
+        leccionRepository.guardarEstado("2", EstadoLeccion.COMPLETADA, fecha = 2).getOrThrow()
+        //Assert
+        assertThat(usuarioRepository.observarLeccionesCompletadas().esperar { it == 1 }).isEqualTo(1)
     }
 
     @Test

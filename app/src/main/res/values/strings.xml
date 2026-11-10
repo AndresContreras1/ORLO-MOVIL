@@ -368,6 +368,8 @@
     <string name="foto_de_perfil">Foto de perfil</string>
     <string name="foto_actualizada">Foto actualizada</string>
     <string name="error_cambiar_foto">No se pudo cambiar la foto. Intenta de nuevo.</string>
+    <string name="estilo_cuenta">Tu estilo: %1$s</string>
+    <string name="lecciones_completadas_cuenta">Lecciones completadas: %1$d</string>
     <string name="cantidad_prendas_cuenta">Tu armario: %1$d prendas</string>
     <string name="canal_lecciones">Lecciones nuevas</string>
     <string name="notificacion_leccion_titulo">Nueva lección en ORLO</string>

@@ -137,11 +137,24 @@ fun AccountScreenContent(
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(text = state.nombre, style = MaterialTheme.typography.titleMedium)
                         Text(text = state.correo, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (state.estilo != null) {
+                            Text(
+                                text = stringResource(R.string.estilo_cuenta, state.estilo),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                         Text(
                             text = stringResource(R.string.cantidad_prendas_cuenta, state.cantidadPrendas),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.testTag("cantidadPrendas"),
+                        )
+                        Text(
+                            text = stringResource(R.string.lecciones_completadas_cuenta, state.leccionesCompletadas),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.testTag("leccionesCompletadas"),
                         )
                     }
                 }
@@ -206,6 +219,8 @@ fun AccountScreenPreview() {
                 nombre = "Laura",
                 correo = "laura@correo.com",
                 cantidadPrendas = 12,
+                estilo = "Elegante · clásico",
+                leccionesCompletadas = 3,
                 cuenta = LocalPreviewProvider.cuenta,
             ),
             onEditarDatos = {}, onFoto = {}, onPremium = {}, onCerrarSesion = {}, onBorrarCuenta = {},

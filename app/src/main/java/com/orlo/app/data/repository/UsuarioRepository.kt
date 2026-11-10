@@ -11,6 +11,7 @@ import com.orlo.app.data.dtos.toActualizarPerfilDto
 import com.orlo.app.data.dtos.toPerfilUi
 import com.orlo.app.data.dtos.toResultadoFirestoreDto
 import com.orlo.app.data.dtos.toResultadoUi
+import com.orlo.app.data.model.EstadoLeccion
 import com.orlo.app.data.model.PerfilUi
 import com.orlo.app.data.model.ResultadoUi
 import javax.inject.Inject
@@ -68,12 +69,21 @@ class UsuarioRepository @Inject constructor(
             val bytes = imagenLocalDataSource.comprimir(foto) ?: throw ErrorAlSubirImagenException()
             val url = storageRemoteDataSource.uploadImage(rutaFotoDePerfil(uid), bytes) + "&v=$fecha"
             usuarioRemoteDataSource.actualizarFoto(uid, url)
+            authRemoteDataSource.actualizarFoto(url)
             Result.success(url)
         } catch (e: Exception) {
             Log.d("UsuarioRepository", "cambiarFoto: ${e.message}")
             Result.failure(errorDe(e))
         }
     }
+
+    // Cuantas lecciones lleva completadas, en vivo, para el resumen de Mi cuenta. Solo lee Firestore
+    fun observarLeccionesCompletadas(): Flow<Result<Int>> =
+        authRemoteDataSource.enVivo("UsuarioRepository") { uid ->
+            usuarioRemoteDataSource.observarProgresoLecciones(uid).map { progreso ->
+                progreso.count { it.status == EstadoLeccion.COMPLETADA.codigo }
+            }
+        }
 
     suspend fun guardarPerfil(perfil: PerfilUi): Result<Unit> {
         return try {

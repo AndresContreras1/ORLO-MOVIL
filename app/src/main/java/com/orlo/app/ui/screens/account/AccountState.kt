@@ -9,6 +9,9 @@ data class AccountState(
     val fotoUrl: String? = null,
     // Lo cuenta una Cloud Function cada vez que se crea o se borra una prenda
     val cantidadPrendas: Int = 0,
+    // El estilo del cuestionario y el avance de Aprende, para el resumen del perfil
+    val estilo: String? = null,
+    val leccionesCompletadas: Int = 0,
     val subiendoFoto: Boolean = false,
     @StringRes val avisoRes: Int? = null,
     // null si no se pudo leer la cuenta del backend: la pantalla sigue sirviendo (cerrar sesion,
