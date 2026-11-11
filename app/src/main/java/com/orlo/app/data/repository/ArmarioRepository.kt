@@ -11,6 +11,7 @@ import com.orlo.app.data.dtos.toGuardarOutfitDto
 import com.orlo.app.data.dtos.toGuardarPrendaDto
 import com.orlo.app.data.dtos.toOutfitUi
 import com.orlo.app.data.dtos.toPrendaUi
+import com.orlo.app.data.model.MAX_NOMBRE_LENGTH
 import com.orlo.app.data.model.OcasionOutfit
 import com.orlo.app.data.model.OrigenOutfit
 import com.orlo.app.data.model.OutfitPropuestoUi
@@ -156,11 +157,12 @@ class ArmarioRepository @Inject constructor(
         }
     }
 
-    // El boton "Guardar outfit" del asesor: el outfit queda como texto, con su porque
+    // El boton "Guardar outfit" del asesor: el outfit queda como texto, con su porque. El titulo lo
+    // escribe la IA y puede pasar del tope del nombre, que es el mismo del formulario y de las reglas
     suspend fun guardarOutfitDelAsesor(propuesto: OutfitPropuestoUi, fecha: Long): Result<OutfitUi> =
         guardarOutfit(
             outfit = OutfitUi(
-                nombre = propuesto.titulo,
+                nombre = propuesto.titulo.trim().take(MAX_NOMBRE_LENGTH),
                 ocasion = OcasionOutfit.OTRA,
                 prendasTexto = propuesto.prendas,
                 porQue = propuesto.porQue,
@@ -172,7 +174,7 @@ class ArmarioRepository @Inject constructor(
     // Una copia nueva, que se puede editar sin tocar el original
     suspend fun duplicarOutfit(outfit: OutfitUi, sufijo: String, fecha: Long): Result<OutfitUi> =
         guardarOutfit(
-            outfit = outfit.copy(id = "", nombre = "${outfit.nombre} $sufijo".trim().take(40), favorito = false, fecha = fecha),
+            outfit = outfit.copy(id = "", nombre = "${outfit.nombre} $sufijo".trim().take(MAX_NOMBRE_LENGTH), favorito = false, fecha = fecha),
             fecha = fecha,
         )
 
